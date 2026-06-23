@@ -983,9 +983,12 @@ function isAllGradeText(text = "") {
 }
 
 function getGradesFromSchedule(schedule = {}) {
-  if (Array.isArray(schedule.grades) && schedule.grades.length) {
-    return normalizeGradeArray(schedule.grades);
-  }
+  const text = getScheduleGradeText(schedule);
+  const gradesFromText = getGradesFromText(text);
+
+  // NEIS/프록시가 학년값을 전학년처럼 내려주더라도,
+  // 일정명에 “2,3학년”처럼 명확한 학년이 있으면 제목의 학년 정보를 우선한다.
+  if (gradesFromText.length) return gradesFromText;
 
   const gradesFromFields = GRADE_FIELD_MAP
     .filter(({ fields }) => fields.some((field) => isYesValue(schedule[field])))
@@ -993,9 +996,9 @@ function getGradesFromSchedule(schedule = {}) {
 
   if (gradesFromFields.length) return normalizeGradeArray(gradesFromFields);
 
-  const text = getScheduleGradeText(schedule);
-  const gradesFromText = getGradesFromText(text);
-  if (gradesFromText.length) return gradesFromText;
+  if (Array.isArray(schedule.grades) && schedule.grades.length) {
+    return normalizeGradeArray(schedule.grades);
+  }
 
   if (isAllGradeText(text)) return getDefaultGradesForSchool(state.selectedSchool);
 
