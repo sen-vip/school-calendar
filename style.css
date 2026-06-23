@@ -1400,7 +1400,7 @@ main {
 }
 
 .day-cell.has-schedule::after {
-  content: "눌러보기";
+  content: "클릭 시 그날 일정";
   display: none;
   margin-top: 4px;
   color: var(--primary);

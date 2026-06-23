@@ -576,21 +576,6 @@ function renderCalendar() {
   }
 
   els.calendar.innerHTML = cells.join("");
-
-  els.calendar.querySelectorAll(".day-cell[data-date]").forEach((cell) => {
-    cell.addEventListener("click", () => {
-      const clickedDate = cell.dataset.date;
-      const clickedSchedules = getSelectedSchoolSchedules().filter((schedule) => schedule.date === clickedDate);
-      if (!clickedSchedules.length) return;
-
-      state.selectedDateKey = state.selectedDateKey === clickedDate ? "" : clickedDate;
-      state.scheduleSearchKeyword = "";
-  state.selectedDateKey = "";
-      if (els.scheduleKeyword) els.scheduleKeyword.value = "";
-      renderCalendar();
-      renderScheduleList();
-      document.querySelector("#scheduleListTitle")?.scrollIntoView({ behavior: "smooth", block: "start" });
-    });
   });
 }
 
@@ -746,7 +731,38 @@ async function goToday() {
   renderAll();
 }
 
+
+function handleCalendarDateClick(event) {
+  const cell = event.target.closest(".day-cell[data-date]");
+  if (!cell || !els.calendar?.contains(cell)) return;
+
+  const clickedDate = cell.dataset.date;
+  const clickedSchedules = getSelectedSchoolSchedules().filter((schedule) => schedule.date === clickedDate);
+
+  if (!clickedSchedules.length) return;
+
+  state.selectedDateKey = state.selectedDateKey === clickedDate ? "" : clickedDate;
+  state.scheduleSearchKeyword = "";
+  if (els.scheduleKeyword) els.scheduleKeyword.value = "";
+
+  renderCalendar();
+  renderScheduleList();
+
+  document.querySelector("#scheduleListTitle")?.scrollIntoView({
+    behavior: "smooth",
+    block: "start"
+  });
+}
+
+
 function bindEvents() {
+  els.calendar?.addEventListener("click", handleCalendarDateClick);
+  els.calendar?.addEventListener("keydown", (event) => {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    if (!event.target.closest(".day-cell[data-date]")) return;
+    event.preventDefault();
+    handleCalendarDateClick(event);
+  });
   els.schoolSearchForm.addEventListener("submit", async (event) => {
     event.preventDefault();
     const schools = await searchSchools(els.schoolKeyword.value, els.schoolRegion?.value || "");
