@@ -265,6 +265,8 @@ function normalizeNeisScheduleData(rawData) {
   const title = normalized.title || normalized.EVENT_NM || normalized.AA_YMD_EVENT_NM || normalized.eventName || "학사일정";
   const content = normalized.content || normalized.EVENT_CNTNT || normalized.EVENT_CONTENT || normalized.eventContent || "";
   const rawDate = normalized.date || normalized.AA_YMD || normalized.EVENT_DATE || normalized.eventDate || "";
+  const scheduleWithText = { ...normalized, title, content };
+  const grades = getGradesFromSchedule(scheduleWithText);
 
   return {
     ...normalized,
@@ -272,8 +274,8 @@ function normalizeNeisScheduleData(rawData) {
     date: normalizeScheduleDate(rawDate),
     title,
     content,
-    grades: getGradesFromSchedule(normalized),
-    isAllGrades: isAllGradeSchedule(normalized),
+    grades,
+    isAllGrades: isAllGradeSchedule({ ...scheduleWithText, grades }),
     type: normalized.type || classifyScheduleType(title, content)
   };
 }
@@ -928,22 +930,76 @@ function hasGradeFields(schedule) {
   return GRADE_FIELD_MAP.some(({ fields }) => fields.some((field) => Object.prototype.hasOwnProperty.call(schedule, field)));
 }
 
+function normalizeGradeArray(grades = []) {
+  return [...new Set(grades.map((grade) => String(grade).replace(/[^1-6]/g, "")).filter(Boolean))]
+    .sort((a, b) => Number(a) - Number(b));
+}
+
+function getScheduleGradeText(schedule = {}) {
+  return [
+    schedule.title,
+    schedule.content,
+    schedule.EVENT_NM,
+    schedule.EVENT_CNTNT,
+    schedule.EVENT_CONTENT,
+    schedule.AA_YMD_EVENT_NM,
+    schedule.eventName,
+    schedule.eventContent
+  ].filter(Boolean).join(" ");
+}
+
+function getGradesFromText(text = "") {
+  const raw = String(text || "");
+  const found = [];
+
+  // 1~3학년, 1-3학년, 1∼3학년
+  raw.replace(/([1-6])\s*[~∼-]\s*([1-6])\s*학년/g, (_, start, end) => {
+    const from = Math.min(Number(start), Number(end));
+    const to = Math.max(Number(start), Number(end));
+    for (let grade = from; grade <= to; grade += 1) found.push(String(grade));
+    return "";
+  });
+
+  // 2,3학년 / 2·3학년 / 2ㆍ3학년 / 2, 3 학년 / 1,2,3학년
+  raw.replace(/((?:[1-6]\s*[,·ㆍ]\s*)+[1-6])\s*학년/g, (match, group) => {
+    group.replace(/[1-6]/g, (grade) => {
+      found.push(grade);
+      return grade;
+    });
+    return match;
+  });
+
+  // 2학년, 3학년 / 제2학년
+  raw.replace(/(?:제\s*)?([1-6])\s*학년/g, (match, grade) => {
+    found.push(grade);
+    return match;
+  });
+
+  return normalizeGradeArray(found);
+}
+
+function isAllGradeText(text = "") {
+  return /전\s*학년|전체\s*학년|모든\s*학년|전교생|전교\s*생|공통/.test(String(text || ""));
+}
+
 function getGradesFromSchedule(schedule = {}) {
   if (Array.isArray(schedule.grades) && schedule.grades.length) {
-    return [...new Set(schedule.grades.map((grade) => String(grade).replace(/[^1-6]/g, "")).filter(Boolean))];
+    return normalizeGradeArray(schedule.grades);
   }
 
   const gradesFromFields = GRADE_FIELD_MAP
     .filter(({ fields }) => fields.some((field) => isYesValue(schedule[field])))
     .map(({ grade }) => grade);
 
-  if (gradesFromFields.length) return gradesFromFields;
+  if (gradesFromFields.length) return normalizeGradeArray(gradesFromFields);
 
-  const text = `${schedule.title || ""} ${schedule.content || ""} ${schedule.EVENT_NM || ""} ${schedule.EVENT_CNTNT || ""}`;
-  if (/전\s*학년|전체\s*학년|공통/.test(text)) return getDefaultGradesForSchool(state.selectedSchool);
+  const text = getScheduleGradeText(schedule);
+  const gradesFromText = getGradesFromText(text);
+  if (gradesFromText.length) return gradesFromText;
 
-  const gradesFromText = [...text.matchAll(/([1-6])\s*학년/g)].map((match) => match[1]);
-  return [...new Set(gradesFromText)];
+  if (isAllGradeText(text)) return getDefaultGradesForSchool(state.selectedSchool);
+
+  return [];
 }
 
 function isAllGradeSchedule(schedule = {}) {

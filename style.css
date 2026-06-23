@@ -1547,3 +1547,13 @@ main {
   font-weight: 900;
   white-space: nowrap;
 }
+
+/* 3-1.1 fix: keep grade badges as compact chips, not full-width bars */
+.schedule-body .grade-badge {
+  align-self: flex-start;
+  width: auto;
+  max-width: fit-content;
+  margin-top: 7px;
+  margin-left: 0;
+  padding: 4px 10px;
+}
