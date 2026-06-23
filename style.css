@@ -1610,3 +1610,238 @@ main {
     flex: 1 1 120px;
   }
 }
+
+
+/* 3-3 update: compact filters, separated share actions, clearer selected-date card */
+.quick-card {
+  gap: 10px;
+  padding: 14px;
+}
+
+.quick-filter-group {
+  gap: 6px;
+}
+
+.filter-group-title {
+  letter-spacing: -0.01em;
+}
+
+.filter-row {
+  flex-wrap: wrap;
+  overflow-x: visible;
+  gap: 6px;
+}
+
+.filter-chip {
+  padding: 8px 11px;
+  font-size: 12.5px;
+}
+
+.schedule-search input[type="search"] {
+  height: 46px;
+  border-radius: 16px;
+  font-size: 13px;
+}
+
+.selected-school-card {
+  align-items: flex-start;
+}
+
+.selected-school-actions {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+  margin-top: 13px;
+  padding: 10px;
+  border: 1px solid rgba(91, 95, 239, 0.14);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.68);
+}
+
+.share-action-label {
+  flex: 0 0 100%;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 950;
+}
+
+.copy-share-button {
+  min-height: 34px;
+  padding: 8px 11px;
+  font-size: 12px;
+  box-shadow: none;
+}
+
+.copy-share-button:not(.secondary) {
+  box-shadow: 0 7px 14px rgba(91, 95, 239, 0.12);
+}
+
+.copy-share-button:disabled {
+  background: #F3F4F6;
+  color: #9CA3AF;
+  opacity: 1;
+}
+
+.selected-date-panel {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 12px;
+  padding: 14px;
+  border-radius: 20px;
+  background: linear-gradient(180deg, #F4F6FF 0%, #FFFFFF 100%);
+}
+
+.selected-date-summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.selected-date-kicker {
+  display: block;
+  margin-bottom: 2px;
+  color: var(--muted) !important;
+  font-size: 11px !important;
+  font-weight: 950 !important;
+}
+
+.selected-date-panel strong {
+  margin-bottom: 3px;
+  font-size: 17px;
+  letter-spacing: -0.03em;
+}
+
+.selected-date-actions {
+  flex: 0 0 auto;
+}
+
+.selected-date-actions button {
+  min-height: 34px;
+  padding: 8px 11px;
+  font-size: 12px;
+}
+
+.selected-date-preview {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.selected-date-preview li {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 9px 10px;
+  border: 1px solid rgba(229, 231, 235, 0.9);
+  border-radius: 14px;
+  background: #fff;
+  color: var(--text);
+}
+
+.selected-date-preview li strong {
+  margin: 0;
+  font-size: 13.5px;
+  font-weight: 900;
+}
+
+.selected-date-preview .grade-badge,
+.selected-date-preview .type-badge {
+  margin: 0;
+  padding: 4px 8px;
+  font-size: 11px;
+}
+
+.selected-date-empty {
+  color: var(--muted) !important;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.selected-date-more {
+  margin: -2px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.schedule-item {
+  align-items: flex-start;
+}
+
+.schedule-body h3 {
+  margin-bottom: 5px;
+}
+
+.schedule-body .type-badge,
+.schedule-body .grade-badge {
+  margin-top: 7px;
+  margin-right: 4px;
+}
+
+@media (min-width: 760px) {
+  .quick-card {
+    grid-template-columns: 1fr 1fr;
+    align-items: end;
+  }
+
+  .quick-card .schedule-search {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 640px) {
+  .quick-card {
+    padding: 12px;
+    gap: 9px;
+  }
+
+  .filter-row {
+    gap: 5px;
+  }
+
+  .filter-chip {
+    padding: 7px 9px;
+    font-size: 12px;
+  }
+
+  .selected-school-card {
+    padding: 14px;
+  }
+
+  .selected-school-actions {
+    gap: 6px;
+    padding: 9px;
+  }
+
+  .copy-share-button,
+  .selected-date-actions button {
+    flex: 1 1 calc(50% - 6px);
+    width: auto;
+    padding: 8px 9px;
+    font-size: 11.5px;
+  }
+
+  .selected-date-summary {
+    flex-direction: column;
+    gap: 9px;
+  }
+
+  .selected-date-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .selected-date-preview li {
+    padding: 8px 9px;
+  }
+
+  .selected-date-preview li strong {
+    flex: 1 1 100%;
+  }
+}

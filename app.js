@@ -744,19 +744,34 @@ function renderSelectedDatePanel() {
     return schedule.date === state.selectedDateKey &&
       isScheduleVisibleByGrade(schedule, state.selectedGrade) &&
       (state.activeFilter === "all" || schedule.type === state.activeFilter);
-  });
-  const label = `${date.getMonth() + 1}.${date.getDate()} ${weekdays[date.getDay()]}`;
+  }).sort((a, b) => a.title.localeCompare(b.title, "ko"));
+  const label = `${date.getMonth() + 1}월 ${date.getDate()}일 ${weekdays[date.getDay()]}요일`;
+  const previewItems = daySchedules.length
+    ? daySchedules.slice(0, 4).map((schedule) => `
+        <li>
+          <span class="grade-badge">${escapeHtml(getGradeLabel(schedule))}</span>
+          <span class="type-badge ${schedule.type}">${typeLabels[schedule.type] || typeLabels.normal}</span>
+          <strong>${escapeHtml(schedule.title)}</strong>
+        </li>
+      `).join("")
+    : `<li class="selected-date-empty">현재 필터에 해당하는 일정이 없습니다.</li>`;
+  const moreText = daySchedules.length > 4 ? `<p class="selected-date-more">외 ${daySchedules.length - 4}건은 아래 목록에서 확인할 수 있어요.</p>` : "";
 
   els.selectedDatePanel.classList.remove("is-hidden");
   els.selectedDatePanel.innerHTML = `
-    <div>
-      <strong>${label}</strong>
-      <span>선택한 날짜 일정 ${daySchedules.length}개</span>
+    <div class="selected-date-summary">
+      <div>
+        <span class="selected-date-kicker">선택한 날짜</span>
+        <strong>${label}</strong>
+        <span>일정 ${daySchedules.length}건</span>
+      </div>
+      <div class="selected-date-actions">
+        <button type="button" id="copySelectedDateInlineBtn">선택 날짜 복사</button>
+        <button type="button" id="clearSelectedDateBtn">전체 일정 보기</button>
+      </div>
     </div>
-    <div class="selected-date-actions">
-      <button type="button" id="copySelectedDateInlineBtn">선택 날짜 복사</button>
-      <button type="button" id="clearSelectedDateBtn">전체 일정 보기</button>
-    </div>
+    <ul class="selected-date-preview">${previewItems}</ul>
+    ${moreText}
   `;
 
   document.querySelector("#copySelectedDateInlineBtn")?.addEventListener("click", copySelectedDateShareText);
