@@ -500,7 +500,7 @@ function renderScheduleList() {
         <div class="date-pill"><span>${monthDay}</span><small>${weekday}</small></div>
         <div class="schedule-body">
           <h3>${escapeHtml(schedule.title)}</h3>
-          <p>${escapeHtml(schedule.content || "세부 내용은 학교 안내를 확인해 주세요.")}</p>
+          ${schedule.content ? `<p>${escapeHtml(schedule.content)}</p>` : ""}
           <span class="type-badge ${schedule.type}">${typeLabels[schedule.type] || typeLabels.normal}</span>
         </div>
       </article>
