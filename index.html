@@ -67,7 +67,9 @@
           <h2 id="selectedSchoolName">학교를 선택하면 학사일정이 표시돼요.</h2>
           <p id="selectedSchoolMeta">학교 검색 후 선택 버튼을 눌러주세요.</p>
           <div class="selected-school-actions">
-            <button type="button" id="copyShareBtn" class="copy-share-button is-hidden">일정 공유문구 복사</button>
+            <button type="button" id="copyMonthShareBtn" class="copy-share-button is-hidden">이번 달 일정 복사</button>
+            <button type="button" id="copySelectedDateBtn" class="copy-share-button secondary is-hidden" disabled>선택 날짜 복사</button>
+            <button type="button" id="copySchoolLinkBtn" class="copy-share-button secondary is-hidden">학교 링크 복사</button>
           </div>
         </div>
       </section>
@@ -93,15 +95,6 @@
             <button type="button" class="filter-chip" data-filter="vacation">방학·개학</button>
             <button type="button" class="filter-chip" data-filter="exam">시험·평가</button>
             <button type="button" class="filter-chip" data-filter="event">행사·체험</button>
-          </div>
-        </div>
-
-
-        <div class="quick-filter-group">
-          <span class="filter-group-title">기간별 보기</span>
-          <div class="filter-row date-scope-row" role="group" aria-label="일정 기간 필터">
-            <button type="button" class="filter-chip active" data-date-scope="all" aria-pressed="true">전체 일정</button>
-            <button type="button" class="filter-chip" data-date-scope="future" aria-pressed="false">오늘 이후만</button>
           </div>
         </div>
 

@@ -66,7 +66,6 @@ const state = {
   currentDate: new Date(2026, 5, 1),
   activeFilter: "all",
   selectedGrade: "all",
-  dateScope: "all",
   searchKeyword: "",
   selectedOfficeCode: "",
   scheduleSearchKeyword: "",
@@ -88,7 +87,9 @@ const els = {
   resetSchoolBtn: document.querySelector("#resetSchoolBtn"),
   selectedSchoolName: document.querySelector("#selectedSchoolName"),
   selectedSchoolMeta: document.querySelector("#selectedSchoolMeta"),
-  copyShareBtn: document.querySelector("#copyShareBtn"),
+  copyMonthShareBtn: document.querySelector("#copyMonthShareBtn"),
+  copySelectedDateBtn: document.querySelector("#copySelectedDateBtn"),
+  copySchoolLinkBtn: document.querySelector("#copySchoolLinkBtn"),
   summaryTitle: document.querySelector("#summaryTitle"),
   summaryCount: document.querySelector("#summaryCount"),
   summaryBadges: document.querySelector("#summaryBadges"),
@@ -103,7 +104,6 @@ const els = {
   scheduleKeyword: document.querySelector("#scheduleKeyword"),
   filterButtons: document.querySelectorAll(".filter-chip[data-filter]"),
   gradeFilterRow: document.querySelector("#gradeFilterRow"),
-  dateScopeButtons: document.querySelectorAll(".filter-chip[data-date-scope]"),
   quickSchoolButtons: document.querySelectorAll("[data-school-keyword]")
 };
 
@@ -356,37 +356,141 @@ function getCurrentPageUrl() {
   return window.location.href.split("#")[0];
 }
 
-function makeShareText() {
+function buildSelectedSchoolUrl() {
+  const school = state.selectedSchool;
+  const url = new URL(getCurrentPageUrl());
+  if (!school) return url.toString();
+
+  url.searchParams.set("officeCode", school.officeCode || "");
+  url.searchParams.set("schoolCode", school.schoolCode || "");
+  url.searchParams.set("schoolName", school.schoolName || "");
+  url.searchParams.set("region", school.region || "");
+  url.searchParams.set("schoolType", school.schoolType || "");
+  url.searchParams.set("address", school.address || "");
+  url.searchParams.set("year", String(state.currentDate.getFullYear()));
+  url.searchParams.set("month", String(state.currentDate.getMonth() + 1));
+  return url.toString();
+}
+
+function getSchoolFromUrlParams() {
+  const params = new URLSearchParams(window.location.search);
+  const schoolCode = params.get("schoolCode");
+  const schoolName = params.get("schoolName");
+  const officeCode = params.get("officeCode");
+  if (!schoolCode || !schoolName || !officeCode) return null;
+
+  return {
+    officeCode,
+    schoolCode,
+    schoolName,
+    region: params.get("region") || getOfficeName(officeCode),
+    schoolType: params.get("schoolType") || "학교",
+    address: params.get("address") || ""
+  };
+}
+
+function applyDateFromUrlParams() {
+  const params = new URLSearchParams(window.location.search);
+  const year = Number(params.get("year"));
+  const month = Number(params.get("month"));
+  if (!year || !month || month < 1 || month > 12) return;
+  state.currentDate = new Date(year, month - 1, 1);
+}
+
+function getCurrentShareFiltersLabel() {
+  const labels = [];
+  if (state.selectedGrade !== "all") labels.push(`${state.selectedGrade}학년`);
+  if (state.activeFilter !== "all") labels.push(typeLabels[state.activeFilter] || "선택한 종류");
+  return labels.length ? ` · ${labels.join(" · ")}` : "";
+}
+
+function formatScheduleShareLine(schedule) {
+  const date = parseDateKey(schedule.date);
+  const grade = getGradeLabel(schedule);
+  return `- ${date.getMonth() + 1}.${date.getDate()}(${weekdays[date.getDay()]}) ${schedule.title}${grade ? ` [${grade}]` : ""}`;
+}
+
+function makeMonthShareText() {
   const school = state.selectedSchool;
   if (!school) return "";
 
-  const schedules = getMonthSchedules();
   const monthTitle = formatMonthTitle(state.currentDate);
-  const topSchedules = schedules.slice(0, 6).map((schedule) => {
-    const date = parseDateKey(schedule.date);
-    return `- ${date.getMonth() + 1}.${date.getDate()} ${schedule.title}`;
-  }).join("\n");
+  const schedules = getMonthSchedules()
+    .filter((schedule) => (state.activeFilter === "all" || schedule.type === state.activeFilter))
+    .filter((schedule) => isScheduleVisibleByGrade(schedule, state.selectedGrade))
+    .sort((a, b) => a.date.localeCompare(b.date));
+  const scheduleLines = schedules.map(formatScheduleShareLine).join("\n");
 
   return [
-    `🏫 ${school.schoolName} ${monthTitle} 학사일정`,
-    topSchedules || "- 등록된 학사일정이 없습니다.",
+    `🏫 ${school.schoolName} ${monthTitle} 학사일정${getCurrentShareFiltersLabel()}`,
+    scheduleLines || "- 등록된 학사일정이 없습니다.",
     "",
-    `자세히 보기: ${getCurrentPageUrl()}`
+    "※ 세부 내용은 학교 안내를 확인해 주세요.",
+    `자세히 보기: ${buildSelectedSchoolUrl()}`
   ].join("\n");
 }
 
-async function copyShareText() {
-  if (!state.selectedSchool) return;
+function makeSelectedDateShareText() {
+  const school = state.selectedSchool;
+  if (!school || !state.selectedDateKey) return "";
 
-  const text = makeShareText();
+  const date = parseDateKey(state.selectedDateKey);
+  const dateLabel = `${date.getMonth() + 1}.${date.getDate()}(${weekdays[date.getDay()]})`;
+  const schedules = getSelectedSchoolSchedules()
+    .filter((schedule) => schedule.date === state.selectedDateKey)
+    .filter((schedule) => (state.activeFilter === "all" || schedule.type === state.activeFilter))
+    .filter((schedule) => isScheduleVisibleByGrade(schedule, state.selectedGrade))
+    .sort((a, b) => a.title.localeCompare(b.title));
+  const scheduleLines = schedules.map(formatScheduleShareLine).join("\n");
+
+  return [
+    `🏫 ${school.schoolName} ${dateLabel} 학사일정${getCurrentShareFiltersLabel()}`,
+    scheduleLines || "- 선택한 날짜에 표시할 일정이 없습니다.",
+    "",
+    "※ 세부 내용은 학교 안내를 확인해 주세요.",
+    `자세히 보기: ${buildSelectedSchoolUrl()}`
+  ].join("\n");
+}
+
+function makeSchoolLinkText() {
+  const school = state.selectedSchool;
+  if (!school) return "";
+
+  return [
+    `🏫 ${school.schoolName} 학사일정`,
+    `${school.region} · ${school.schoolType || "학교"}`,
+    buildSelectedSchoolUrl()
+  ].join("\n");
+}
+
+async function copyTextToClipboard(text, successMessage) {
+  if (!text) return;
 
   try {
     await navigator.clipboard.writeText(text);
-    showToast("공유 문구를 복사했어요.");
+    showToast(successMessage);
   } catch (error) {
     console.warn(error);
     showToast("복사하지 못했어요. 브라우저 권한을 확인해 주세요.");
   }
+}
+
+function copyMonthShareText() {
+  if (!state.selectedSchool) return;
+  copyTextToClipboard(makeMonthShareText(), "이번 달 일정을 복사했어요.");
+}
+
+function copySelectedDateShareText() {
+  if (!state.selectedSchool || !state.selectedDateKey) {
+    showToast("달력에서 날짜를 먼저 선택해 주세요.");
+    return;
+  }
+  copyTextToClipboard(makeSelectedDateShareText(), "선택한 날짜 일정을 복사했어요.");
+}
+
+function copySchoolLinkText() {
+  if (!state.selectedSchool) return;
+  copyTextToClipboard(makeSchoolLinkText(), "선택 학교 링크를 복사했어요.");
 }
 
 function showToast(message) {
@@ -514,13 +618,17 @@ function renderSelectedSchool() {
   if (!state.selectedSchool) {
     els.selectedSchoolName.textContent = "학교를 선택하면 학사일정이 표시돼요.";
     els.selectedSchoolMeta.textContent = "지역과 학교명을 입력한 뒤, 이 학교 선택 버튼을 눌러주세요.";
-    els.copyShareBtn?.classList.add("is-hidden");
+    [els.copyMonthShareBtn, els.copySelectedDateBtn, els.copySchoolLinkBtn].forEach((button) => button?.classList.add("is-hidden"));
     return;
   }
 
   els.selectedSchoolName.textContent = state.selectedSchool.schoolName;
   els.selectedSchoolMeta.textContent = `${state.selectedSchool.region} · ${state.selectedSchool.schoolType} · ${state.selectedSchool.address}`;
-  els.copyShareBtn?.classList.remove("is-hidden");
+  [els.copyMonthShareBtn, els.copySelectedDateBtn, els.copySchoolLinkBtn].forEach((button) => button?.classList.remove("is-hidden"));
+  if (els.copySelectedDateBtn) {
+    els.copySelectedDateBtn.disabled = !state.selectedDateKey;
+    els.copySelectedDateBtn.textContent = state.selectedDateKey ? "선택 날짜 복사" : "날짜 선택 후 복사";
+  }
 }
 
 function renderGradeFilters() {
@@ -541,7 +649,7 @@ function renderGradeFilters() {
 }
 
 function renderSummary() {
-  const monthSchedules = getMonthSchedules().filter((schedule) => isScheduleVisibleByGrade(schedule, state.selectedGrade) && isScheduleVisibleByDateScope(schedule));
+  const monthSchedules = getMonthSchedules().filter((schedule) => isScheduleVisibleByGrade(schedule, state.selectedGrade));
   const monthTitle = formatMonthTitle(state.currentDate);
   els.summaryTitle.textContent = monthTitle;
   els.summaryCount.textContent = state.selectedSchool
@@ -576,7 +684,6 @@ function renderCalendar() {
   const todayKey = toDateKey(new Date());
   const monthSchedules = getMonthSchedules().filter((schedule) => {
     return isScheduleVisibleByGrade(schedule, state.selectedGrade) &&
-      isScheduleVisibleByDateScope(schedule) &&
       (state.activeFilter === "all" || schedule.type === state.activeFilter);
   });
 
@@ -636,7 +743,6 @@ function renderSelectedDatePanel() {
   const daySchedules = getSelectedSchoolSchedules().filter((schedule) => {
     return schedule.date === state.selectedDateKey &&
       isScheduleVisibleByGrade(schedule, state.selectedGrade) &&
-      isScheduleVisibleByDateScope(schedule) &&
       (state.activeFilter === "all" || schedule.type === state.activeFilter);
   });
   const label = `${date.getMonth() + 1}.${date.getDate()} ${weekdays[date.getDay()]}`;
@@ -647,11 +753,17 @@ function renderSelectedDatePanel() {
       <strong>${label}</strong>
       <span>선택한 날짜 일정 ${daySchedules.length}개</span>
     </div>
-    <button type="button" id="clearSelectedDateBtn">전체 일정 보기</button>
+    <div class="selected-date-actions">
+      <button type="button" id="copySelectedDateInlineBtn">선택 날짜 복사</button>
+      <button type="button" id="clearSelectedDateBtn">전체 일정 보기</button>
+    </div>
   `;
+
+  document.querySelector("#copySelectedDateInlineBtn")?.addEventListener("click", copySelectedDateShareText);
 
   document.querySelector("#clearSelectedDateBtn")?.addEventListener("click", () => {
     state.selectedDateKey = "";
+    renderSelectedSchool();
     renderCalendar();
     renderScheduleList();
   });
@@ -735,8 +847,6 @@ async function selectSchool(school) {
   state.scheduleSearchKeyword = "";
   state.selectedDateKey = "";
   state.selectedGrade = "all";
-  state.dateScope = "all";
-  syncDateScopeButtons();
   els.scheduleKeyword.value = "";
   saveSelectedSchool(school);
   els.schoolResults.innerHTML = "";
@@ -753,8 +863,6 @@ async function resetSchool() {
   state.scheduleSearchKeyword = "";
   state.selectedDateKey = "";
   state.selectedGrade = "all";
-  state.dateScope = "all";
-  syncDateScopeButtons();
   els.scheduleKeyword.value = "";
   clearSelectedSchoolStorage();
   els.schoolResults.innerHTML = "";
@@ -803,7 +911,6 @@ function handleCalendarDateClick(event) {
   const clickedSchedules = getSelectedSchoolSchedules().filter((schedule) => {
     return schedule.date === clickedDate &&
       isScheduleVisibleByGrade(schedule, state.selectedGrade) &&
-      isScheduleVisibleByDateScope(schedule) &&
       (state.activeFilter === "all" || schedule.type === state.activeFilter);
   });
 
@@ -813,6 +920,7 @@ function handleCalendarDateClick(event) {
   state.scheduleSearchKeyword = "";
   if (els.scheduleKeyword) els.scheduleKeyword.value = "";
 
+  renderSelectedSchool();
   renderCalendar();
   renderScheduleList();
 
@@ -863,7 +971,9 @@ function bindEvents() {
 
   els.resetSchoolBtn.addEventListener("click", resetSchool);
   els.topChangeSchoolBtn?.addEventListener("click", resetSchool);
-  els.copyShareBtn?.addEventListener("click", copyShareText);
+  els.copyMonthShareBtn?.addEventListener("click", copyMonthShareText);
+  els.copySelectedDateBtn?.addEventListener("click", copySelectedDateShareText);
+  els.copySchoolLinkBtn?.addEventListener("click", copySchoolLinkText);
 
   els.topSelectedSchool?.addEventListener("click", (event) => {
     event.preventDefault();
@@ -891,18 +1001,10 @@ function bindEvents() {
     renderAll();
   });
 
-  els.dateScopeButtons?.forEach((button) => {
-    button.addEventListener("click", () => {
-      state.dateScope = button.dataset.dateScope || "all";
-      state.selectedDateKey = "";
-      syncDateScopeButtons();
-      renderAll();
-    });
-  });
-
   els.scheduleKeyword.addEventListener("input", () => {
     state.scheduleSearchKeyword = els.scheduleKeyword.value;
     state.selectedDateKey = "";
+    renderSelectedSchool();
     renderCalendar();
     renderScheduleList();
   });
@@ -911,9 +1013,14 @@ function bindEvents() {
 async function init() {
   renderOfficeOptions();
   bindEvents();
-  syncDateScopeButtons();
+  applyDateFromUrlParams();
+  const linkedSchool = getSchoolFromUrlParams();
   const savedSchool = loadSelectedSchool();
-  if (savedSchool) {
+  if (linkedSchool) {
+    state.selectedSchool = linkedSchool;
+    saveSelectedSchool(linkedSchool);
+    await loadSchedulesForCurrentMonth();
+  } else if (savedSchool) {
     state.selectedSchool = savedSchool;
     await loadSchedulesForCurrentMonth();
   }
@@ -1127,30 +1234,12 @@ function getFilteredSchedules() {
   return baseSchedules.filter((schedule) => {
     const matchedFilter = state.activeFilter === "all" || schedule.type === state.activeFilter;
     const matchedGrade = isScheduleVisibleByGrade(schedule, state.selectedGrade);
-    const matchedDateScope = isScheduleVisibleByDateScope(schedule);
     const matchedKeyword = !keyword || [schedule.title, schedule.content]
       .join(" ")
       .toLowerCase()
       .includes(keyword);
-    return matchedFilter && matchedGrade && matchedDateScope && matchedKeyword;
+    return matchedFilter && matchedGrade && matchedKeyword;
   }).sort((a, b) => a.date.localeCompare(b.date));
-}
-
-function getTodayKey() {
-  return toDateKey(new Date());
-}
-
-function isScheduleVisibleByDateScope(schedule = {}) {
-  if (state.dateScope !== "future") return true;
-  return String(schedule.date || "") >= getTodayKey();
-}
-
-function syncDateScopeButtons() {
-  els.dateScopeButtons?.forEach((button) => {
-    const isActive = (button.dataset.dateScope || "all") === state.dateScope;
-    button.classList.toggle("active", isActive);
-    button.setAttribute("aria-pressed", isActive ? "true" : "false");
-  });
 }
 
 function classifyScheduleType(title = "", content = "") {
