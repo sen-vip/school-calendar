@@ -86,6 +86,7 @@ const els = {
   resetSchoolBtn: document.querySelector("#resetSchoolBtn"),
   selectedSchoolName: document.querySelector("#selectedSchoolName"),
   selectedSchoolMeta: document.querySelector("#selectedSchoolMeta"),
+  copyShareBtn: document.querySelector("#copyShareBtn"),
   summaryTitle: document.querySelector("#summaryTitle"),
   summaryCount: document.querySelector("#summaryCount"),
   summaryBadges: document.querySelector("#summaryBadges"),
@@ -319,6 +320,79 @@ function clearSelectedSchoolStorage() {
 // ------------------------------------------------------------
 // 렌더링
 // ------------------------------------------------------------
+
+async function retryLastAction() {
+  clearError();
+
+  if (state.selectedSchool) {
+    await loadSchedulesForCurrentMonth();
+    renderAll();
+    return;
+  }
+
+  if (els.schoolKeyword?.value.trim()) {
+    const schools = await searchSchools(els.schoolKeyword.value, els.schoolRegion?.value || "");
+    renderSchoolResults(schools);
+  }
+}
+
+function getCurrentPageUrl() {
+  return window.location.href.split("#")[0];
+}
+
+function makeShareText() {
+  const school = state.selectedSchool;
+  if (!school) return "";
+
+  const schedules = getMonthSchedules();
+  const monthTitle = formatMonthTitle(state.currentDate);
+  const topSchedules = schedules.slice(0, 6).map((schedule) => {
+    const date = parseDateKey(schedule.date);
+    return `- ${date.getMonth() + 1}.${date.getDate()} ${schedule.title}`;
+  }).join("\n");
+
+  return [
+    `🏫 ${school.schoolName} ${monthTitle} 학사일정`,
+    topSchedules || "- 등록된 학사일정이 없습니다.",
+    "",
+    `자세히 보기: ${getCurrentPageUrl()}`
+  ].join("\n");
+}
+
+async function copyShareText() {
+  if (!state.selectedSchool) return;
+
+  const text = makeShareText();
+
+  try {
+    await navigator.clipboard.writeText(text);
+    showToast("공유 문구를 복사했어요.");
+  } catch (error) {
+    console.warn(error);
+    showToast("복사하지 못했어요. 브라우저 권한을 확인해 주세요.");
+  }
+}
+
+function showToast(message) {
+  const existing = document.querySelector(".toast-message");
+  if (existing) existing.remove();
+
+  const toast = document.createElement("div");
+  toast.className = "toast-message";
+  toast.textContent = message;
+  document.body.appendChild(toast);
+
+  setTimeout(() => {
+    toast.classList.add("show");
+  }, 10);
+
+  setTimeout(() => {
+    toast.classList.remove("show");
+    setTimeout(() => toast.remove(), 220);
+  }, 2200);
+}
+
+
 function renderProxyWakeNotice(message) {
   if (API_CONFIG.useMock) return;
   const target = document.querySelector("main");
@@ -339,9 +413,16 @@ function renderError(message) {
   const target = document.querySelector("main");
   if (!target) return;
   const box = document.createElement("div");
-  box.className = "error-box";
-  box.innerHTML = `<span aria-hidden="true">⚠️</span><p>${message}</p>`;
+  box.className = "error-box error-box-with-action";
+  box.innerHTML = `
+    <span aria-hidden="true">⚠️</span>
+    <div>
+      <p>${message}</p>
+      <button type="button" id="retryLastActionBtn">다시 시도</button>
+    </div>`;
   target.prepend(box);
+
+  document.querySelector("#retryLastActionBtn")?.addEventListener("click", retryLastAction);
 }
 
 function renderSchoolResults(schools) {
@@ -367,7 +448,9 @@ function renderSchoolResults(schools) {
     : `검색 결과 ${schools.length}개`;
   const resultGuide = !state.selectedOfficeCode && schools.length >= 8
     ? `<p class="result-guide">검색 결과가 많아요. 지역을 선택하면 더 정확하게 찾을 수 있어요.</p>`
-    : "";
+    : schools.length >= 20
+      ? `<p class="result-guide">검색 결과는 상위 일부만 표시될 수 있어요. 학교명을 조금 더 정확히 입력해 주세요.</p>`
+      : "";
 
   if (!schools.length) {
     els.schoolResults.innerHTML = `
@@ -415,11 +498,13 @@ function renderSelectedSchool() {
   if (!state.selectedSchool) {
     els.selectedSchoolName.textContent = "학교를 선택하면 학사일정이 표시돼요.";
     els.selectedSchoolMeta.textContent = "지역과 학교명을 입력한 뒤, 이 학교 선택 버튼을 눌러주세요.";
+    els.copyShareBtn?.classList.add("is-hidden");
     return;
   }
 
   els.selectedSchoolName.textContent = state.selectedSchool.schoolName;
   els.selectedSchoolMeta.textContent = `${state.selectedSchool.region} · ${state.selectedSchool.schoolType} · ${state.selectedSchool.address}`;
+  els.copyShareBtn?.classList.remove("is-hidden");
 }
 
 function renderSummary() {
@@ -526,7 +611,7 @@ function renderSelectedDatePanel() {
   els.selectedDatePanel.innerHTML = `
     <div>
       <strong>${label}</strong>
-      <span>선택한 날짜 일정 ${daySchedules.length}개</span>
+      <span>선택한 날짜 일정 ${daySchedules.length}개 · 달력 날짜를 누르면 그날 일정만 볼 수 있어요.</span>
     </div>
     <button type="button" id="clearSelectedDateBtn">전체 일정 보기</button>
   `;
@@ -694,6 +779,8 @@ function bindEvents() {
 
   els.resetSchoolBtn.addEventListener("click", resetSchool);
   els.topChangeSchoolBtn?.addEventListener("click", resetSchool);
+  els.copyShareBtn?.addEventListener("click", copyShareText);
+
   els.topSelectedSchool?.addEventListener("click", (event) => {
     event.preventDefault();
     document.querySelector("#selectedSchoolCard")?.scrollIntoView({ behavior: "smooth", block: "start" });

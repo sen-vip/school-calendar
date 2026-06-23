@@ -1333,3 +1333,97 @@ main {
     padding: 13px 14px;
   }
 }
+
+
+/* 2-9 update: deployment polish, retry, mobile guide, share copy */
+.error-box-with-action {
+  align-items: flex-start;
+}
+
+.error-box-with-action div {
+  display: grid;
+  gap: 8px;
+}
+
+.error-box-with-action button {
+  justify-self: start;
+  border: 0;
+  border-radius: 999px;
+  padding: 8px 11px;
+  background: #fff;
+  color: #B91C1C;
+  font-size: 12px;
+  font-weight: 950;
+  box-shadow: inset 0 0 0 1px rgba(185, 28, 28, 0.18);
+}
+
+.selected-school-actions {
+  margin-top: 12px;
+}
+
+.copy-share-button {
+  border: 0;
+  border-radius: 999px;
+  padding: 9px 12px;
+  background: var(--primary);
+  color: #fff;
+  font-size: 12.5px;
+  font-weight: 950;
+  box-shadow: 0 10px 20px rgba(91, 95, 239, 0.16);
+}
+
+.copy-share-button.is-hidden {
+  display: none;
+}
+
+.toast-message {
+  position: fixed;
+  left: 50%;
+  bottom: 82px;
+  z-index: 80;
+  transform: translate(-50%, 12px);
+  max-width: calc(100% - 32px);
+  padding: 12px 14px;
+  border-radius: 999px;
+  background: rgba(17, 24, 39, 0.92);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 850;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.toast-message.show {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.day-cell.has-schedule::after {
+  content: "눌러보기";
+  display: none;
+  margin-top: 4px;
+  color: var(--primary);
+  font-size: 10px;
+  font-weight: 950;
+}
+
+.day-cell.has-schedule:hover::after {
+  display: block;
+}
+
+@media (hover: none) {
+  .day-cell.has-schedule::after {
+    display: block;
+  }
+}
+
+@media (max-width: 640px) {
+  .selected-date-panel span {
+    line-height: 1.45;
+  }
+
+  .copy-share-button {
+    width: 100%;
+  }
+}
