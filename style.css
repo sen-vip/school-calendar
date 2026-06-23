@@ -1051,3 +1051,138 @@ main {
     padding: 0 9px;
   }
 }
+
+
+/* 2-5 update: calendar hover title, notice below calendar, improved schedule list layout */
+.notice-card {
+  margin-top: 0;
+}
+
+.calendar-card + .notice-card,
+.notice-card + .schedule-list-card,
+.notice-card + .card {
+  margin-top: 0;
+}
+
+.calendar-schedule {
+  cursor: help;
+}
+
+.schedule-list-card .card-heading {
+  align-items: baseline;
+  justify-content: flex-start;
+  gap: 10px;
+  border-bottom: 1px solid rgba(229, 231, 235, 0.85);
+  padding-bottom: 13px;
+  margin-bottom: 14px;
+}
+
+.schedule-list-card .card-heading h2,
+#scheduleListTitle {
+  font-size: 22px;
+  letter-spacing: -0.055em;
+}
+
+.schedule-list-card .card-heading .card-desc-inline,
+.schedule-list-card .card-heading p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.schedule-list {
+  gap: 12px;
+}
+
+.schedule-item {
+  grid-template-columns: 86px minmax(0, 1fr);
+  gap: 16px;
+  align-items: stretch;
+  min-height: 86px;
+  padding: 14px;
+  border-color: rgba(209, 213, 219, 0.9);
+  background: linear-gradient(180deg, #FFFFFF 0%, #FCFCFF 100%);
+}
+
+.schedule-item:hover {
+  border-color: rgba(91, 95, 239, 0.28);
+  box-shadow: 0 10px 24px rgba(17, 24, 39, 0.06);
+}
+
+.date-pill {
+  min-height: 72px;
+  border-radius: 18px;
+  background: var(--primary-soft);
+  color: var(--primary-dark);
+}
+
+.date-pill span {
+  font-size: 20px;
+  line-height: 1.1;
+}
+
+.date-pill small {
+  font-size: 12px;
+}
+
+.schedule-body {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.schedule-body h3 {
+  margin: 0 0 6px;
+  font-size: 17px;
+  line-height: 1.32;
+  color: var(--text);
+  word-break: keep-all;
+}
+
+.schedule-body p {
+  margin: 0 0 9px;
+  color: var(--muted);
+  font-size: 13.5px;
+  line-height: 1.55;
+  word-break: keep-all;
+}
+
+.schedule-body .type-badge {
+  align-self: flex-start;
+}
+
+@media (max-width: 640px) {
+  .schedule-list-card .card-heading {
+    display: block;
+  }
+
+  .schedule-list-card .card-heading h2,
+  #scheduleListTitle {
+    font-size: 20px;
+  }
+
+  .schedule-list-card .card-heading p {
+    margin-top: 4px;
+  }
+
+  .schedule-item {
+    grid-template-columns: 72px minmax(0, 1fr);
+    gap: 12px;
+    padding: 12px;
+  }
+
+  .date-pill {
+    min-height: 64px;
+    border-radius: 16px;
+  }
+
+  .date-pill span {
+    font-size: 18px;
+  }
+
+  .schedule-body h3 {
+    font-size: 16px;
+  }
+}

@@ -110,21 +110,22 @@
         <div class="calendar" id="calendar" aria-label="월별 학사일정 달력"></div>
       </section>
 
-      <section class="card list-card" aria-labelledby="scheduleListTitle">
-        <div class="card-heading compact">
-          <div>
-            <span class="kicker">주요 일정</span>
-            <h2 id="scheduleListTitle">6월 주요 학사일정</h2>
-          </div>
-        </div>
-        <div id="scheduleList" class="schedule-list" aria-live="polite"></div>
-      </section>
+      
 
       <section class="notice-card" id="infoSection" aria-label="학사일정 안내">
         <div class="notice-icon" aria-hidden="true">💡</div>
         <p>학사일정은 나이스 교육정보 개방 API 연동을 기준으로 제공될 예정입니다. 학교 사정에 따라 일정이 변경될 수 있으므로, 세부 내용은 학교 안내를 함께 확인해 주세요.</p>
       </section>
-    </main>
+    
+<section class="card list-card schedule-list-card" aria-labelledby="scheduleListTitle">
+        <div class="card-heading compact">
+          <span class="kicker">주요 일정</span>
+          <h2 id="scheduleListTitle">6월 주요 학사일정</h2>
+          <p class="card-desc-inline">세부 내용은 학교 안내를 확인해 주세요.</p>
+        </div>
+        <div id="scheduleList" class="schedule-list" aria-live="polite"></div>
+      </section>
+</main>
   </div>
 
   <nav class="bottom-nav" aria-label="빠른 이동">

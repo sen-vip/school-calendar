@@ -462,7 +462,7 @@ function renderCalendar() {
     cells.push(`
       <div class="${classes.join(" ")}" aria-label="${key}">
         <div class="day-number">${cellDate.getDate()}</div>
-        ${visibleSchedules.map((schedule) => `<span class="calendar-schedule ${schedule.type}">${escapeHtml(schedule.title)}</span>`).join("")}
+        ${visibleSchedules.map((schedule) => `<span class="calendar-schedule ${schedule.type}" title="${escapeHtml(schedule.title)}">${escapeHtml(schedule.title)}</span>`).join("")}
         ${moreCount ? `<span class="more-count">+${moreCount}</span>` : ""}
       </div>
     `);
@@ -496,7 +496,7 @@ function renderScheduleList() {
     const monthDay = `${date.getMonth() + 1}.${date.getDate()}`;
     const weekday = weekdays[date.getDay()];
     return `
-      <article class="schedule-item">
+      <article class="schedule-item" title="${escapeHtml(schedule.title)}">
         <div class="date-pill"><span>${monthDay}</span><small>${weekday}</small></div>
         <div class="schedule-body">
           <h3>${escapeHtml(schedule.title)}</h3>
