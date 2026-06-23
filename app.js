@@ -66,6 +66,7 @@ const state = {
   currentDate: new Date(2026, 5, 1),
   activeFilter: "all",
   selectedGrade: "all",
+  dateScope: "all",
   searchKeyword: "",
   selectedOfficeCode: "",
   scheduleSearchKeyword: "",
@@ -102,6 +103,7 @@ const els = {
   scheduleKeyword: document.querySelector("#scheduleKeyword"),
   filterButtons: document.querySelectorAll(".filter-chip[data-filter]"),
   gradeFilterRow: document.querySelector("#gradeFilterRow"),
+  dateScopeButtons: document.querySelectorAll(".filter-chip[data-date-scope]"),
   quickSchoolButtons: document.querySelectorAll("[data-school-keyword]")
 };
 
@@ -539,7 +541,7 @@ function renderGradeFilters() {
 }
 
 function renderSummary() {
-  const monthSchedules = getMonthSchedules().filter((schedule) => isScheduleVisibleByGrade(schedule, state.selectedGrade));
+  const monthSchedules = getMonthSchedules().filter((schedule) => isScheduleVisibleByGrade(schedule, state.selectedGrade) && isScheduleVisibleByDateScope(schedule));
   const monthTitle = formatMonthTitle(state.currentDate);
   els.summaryTitle.textContent = monthTitle;
   els.summaryCount.textContent = state.selectedSchool
@@ -574,6 +576,7 @@ function renderCalendar() {
   const todayKey = toDateKey(new Date());
   const monthSchedules = getMonthSchedules().filter((schedule) => {
     return isScheduleVisibleByGrade(schedule, state.selectedGrade) &&
+      isScheduleVisibleByDateScope(schedule) &&
       (state.activeFilter === "all" || schedule.type === state.activeFilter);
   });
 
@@ -633,6 +636,7 @@ function renderSelectedDatePanel() {
   const daySchedules = getSelectedSchoolSchedules().filter((schedule) => {
     return schedule.date === state.selectedDateKey &&
       isScheduleVisibleByGrade(schedule, state.selectedGrade) &&
+      isScheduleVisibleByDateScope(schedule) &&
       (state.activeFilter === "all" || schedule.type === state.activeFilter);
   });
   const label = `${date.getMonth() + 1}.${date.getDate()} ${weekdays[date.getDay()]}`;
@@ -731,6 +735,8 @@ async function selectSchool(school) {
   state.scheduleSearchKeyword = "";
   state.selectedDateKey = "";
   state.selectedGrade = "all";
+  state.dateScope = "all";
+  syncDateScopeButtons();
   els.scheduleKeyword.value = "";
   saveSelectedSchool(school);
   els.schoolResults.innerHTML = "";
@@ -747,6 +753,8 @@ async function resetSchool() {
   state.scheduleSearchKeyword = "";
   state.selectedDateKey = "";
   state.selectedGrade = "all";
+  state.dateScope = "all";
+  syncDateScopeButtons();
   els.scheduleKeyword.value = "";
   clearSelectedSchoolStorage();
   els.schoolResults.innerHTML = "";
@@ -795,6 +803,7 @@ function handleCalendarDateClick(event) {
   const clickedSchedules = getSelectedSchoolSchedules().filter((schedule) => {
     return schedule.date === clickedDate &&
       isScheduleVisibleByGrade(schedule, state.selectedGrade) &&
+      isScheduleVisibleByDateScope(schedule) &&
       (state.activeFilter === "all" || schedule.type === state.activeFilter);
   });
 
@@ -882,6 +891,15 @@ function bindEvents() {
     renderAll();
   });
 
+  els.dateScopeButtons?.forEach((button) => {
+    button.addEventListener("click", () => {
+      state.dateScope = button.dataset.dateScope || "all";
+      state.selectedDateKey = "";
+      syncDateScopeButtons();
+      renderAll();
+    });
+  });
+
   els.scheduleKeyword.addEventListener("input", () => {
     state.scheduleSearchKeyword = els.scheduleKeyword.value;
     state.selectedDateKey = "";
@@ -893,6 +911,7 @@ function bindEvents() {
 async function init() {
   renderOfficeOptions();
   bindEvents();
+  syncDateScopeButtons();
   const savedSchool = loadSelectedSchool();
   if (savedSchool) {
     state.selectedSchool = savedSchool;
@@ -1108,12 +1127,30 @@ function getFilteredSchedules() {
   return baseSchedules.filter((schedule) => {
     const matchedFilter = state.activeFilter === "all" || schedule.type === state.activeFilter;
     const matchedGrade = isScheduleVisibleByGrade(schedule, state.selectedGrade);
+    const matchedDateScope = isScheduleVisibleByDateScope(schedule);
     const matchedKeyword = !keyword || [schedule.title, schedule.content]
       .join(" ")
       .toLowerCase()
       .includes(keyword);
-    return matchedFilter && matchedGrade && matchedKeyword;
+    return matchedFilter && matchedGrade && matchedDateScope && matchedKeyword;
   }).sort((a, b) => a.date.localeCompare(b.date));
+}
+
+function getTodayKey() {
+  return toDateKey(new Date());
+}
+
+function isScheduleVisibleByDateScope(schedule = {}) {
+  if (state.dateScope !== "future") return true;
+  return String(schedule.date || "") >= getTodayKey();
+}
+
+function syncDateScopeButtons() {
+  els.dateScopeButtons?.forEach((button) => {
+    const isActive = (button.dataset.dateScope || "all") === state.dateScope;
+    button.classList.toggle("active", isActive);
+    button.setAttribute("aria-pressed", isActive ? "true" : "false");
+  });
 }
 
 function classifyScheduleType(title = "", content = "") {
