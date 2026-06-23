@@ -1515,3 +1515,35 @@ main {
     width: 100%;
   }
 }
+
+/* 3-1 update: grade filters */
+.quick-filter-group {
+  display: grid;
+  gap: 8px;
+}
+.filter-group-title {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 950;
+}
+.grade-filter-row {
+  padding-bottom: 4px;
+}
+.grade-chip.active {
+  border-color: var(--primary-dark);
+  background: var(--primary-dark);
+  color: #fff;
+}
+.grade-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 5px;
+  border-radius: 999px;
+  padding: 6px 9px;
+  background: var(--primary-soft);
+  color: var(--primary-dark);
+  font-size: 12px;
+  font-weight: 900;
+  white-space: nowrap;
+}

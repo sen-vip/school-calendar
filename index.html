@@ -24,7 +24,7 @@
       <div class="hero-glow hero-glow-1" aria-hidden="true"></div>
       <div class="hero-glow hero-glow-2" aria-hidden="true"></div>
       <div class="hero-topline">
-        <span class="brand-pill">📅 학사달력 · NEIS API 준비형</span>
+        <span class="brand-pill">📅 학사달력 · Beta v3.1</span>
       </div>
       <h1>우리학교 일정</h1>
       <p>학교 일정을 한눈에 확인하세요.<br />학교를 검색하면 월별 학사일정을 볼 수 있어요.</p>
@@ -86,11 +86,21 @@
       </section>
 
       <section class="card quick-card" aria-label="빠른 확인 및 검색">
-        <div class="filter-row" role="group" aria-label="학사일정 빠른 필터">
-          <button type="button" class="filter-chip active" data-filter="all">전체</button>
-          <button type="button" class="filter-chip" data-filter="vacation">방학·개학</button>
-          <button type="button" class="filter-chip" data-filter="exam">시험·평가</button>
-          <button type="button" class="filter-chip" data-filter="event">행사·체험</button>
+        <div class="quick-filter-group">
+          <span class="filter-group-title">일정 종류</span>
+          <div class="filter-row" role="group" aria-label="학사일정 빠른 필터">
+            <button type="button" class="filter-chip active" data-filter="all">전체</button>
+            <button type="button" class="filter-chip" data-filter="vacation">방학·개학</button>
+            <button type="button" class="filter-chip" data-filter="exam">시험·평가</button>
+            <button type="button" class="filter-chip" data-filter="event">행사·체험</button>
+          </div>
+        </div>
+
+        <div class="quick-filter-group">
+          <span class="filter-group-title">학년별 보기</span>
+          <div class="filter-row grade-filter-row" id="gradeFilterRow" role="group" aria-label="학년별 학사일정 필터">
+            <button type="button" class="filter-chip grade-chip active" data-grade="all">전체</button>
+          </div>
         </div>
 
         <div class="schedule-search">

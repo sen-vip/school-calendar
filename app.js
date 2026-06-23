@@ -65,6 +65,7 @@ const state = {
   selectedSchool: null,
   currentDate: new Date(2026, 5, 1),
   activeFilter: "all",
+  selectedGrade: "all",
   searchKeyword: "",
   selectedOfficeCode: "",
   scheduleSearchKeyword: "",
@@ -99,7 +100,8 @@ const els = {
   scheduleList: document.querySelector("#scheduleList"),
   selectedDatePanel: document.querySelector("#selectedDatePanel"),
   scheduleKeyword: document.querySelector("#scheduleKeyword"),
-  filterButtons: document.querySelectorAll(".filter-chip"),
+  filterButtons: document.querySelectorAll(".filter-chip[data-filter]"),
+  gradeFilterRow: document.querySelector("#gradeFilterRow"),
   quickSchoolButtons: document.querySelectorAll("[data-school-keyword]")
 };
 
@@ -180,10 +182,7 @@ async function fetchSchedules({ officeCode, schoolCode, year, month }) {
       ? await fetchSchedulesFromMock({ schoolCode, year, month })
       : await fetchSchedulesFromProxy({ officeCode, schoolCode, year, month });
 
-    state.schedules = schedules.map((schedule) => ({
-      ...schedule,
-      type: schedule.type || classifyScheduleType(schedule.title, schedule.content)
-    }));
+    state.schedules = schedules.map((schedule) => normalizeNeisScheduleData(schedule));
     return state.schedules;
   } catch (error) {
     console.error(error);
@@ -261,9 +260,22 @@ function normalizeNeisSchoolData(rawData) {
 }
 
 function normalizeNeisScheduleData(rawData) {
-  // TODO: NEIS 학사일정 응답을 아래 내부 구조로 변환 예정
-  // { schoolCode, date: "YYYY-MM-DD", title, content, grades, type }
-  return rawData;
+  // NEIS 원본 또는 프록시 정규화 응답을 화면 표시용 구조로 한 번 더 보정한다.
+  const normalized = { ...rawData };
+  const title = normalized.title || normalized.EVENT_NM || normalized.AA_YMD_EVENT_NM || normalized.eventName || "학사일정";
+  const content = normalized.content || normalized.EVENT_CNTNT || normalized.EVENT_CONTENT || normalized.eventContent || "";
+  const rawDate = normalized.date || normalized.AA_YMD || normalized.EVENT_DATE || normalized.eventDate || "";
+
+  return {
+    ...normalized,
+    schoolCode: normalized.schoolCode || normalized.SD_SCHUL_CODE || normalized.school_code || "",
+    date: normalizeScheduleDate(rawDate),
+    title,
+    content,
+    grades: getGradesFromSchedule(normalized),
+    isAllGrades: isAllGradeSchedule(normalized),
+    type: normalized.type || classifyScheduleType(title, content)
+  };
 }
 
 // 예전 함수명을 쓰는 코드와 호환되도록 별칭 유지
@@ -507,8 +519,25 @@ function renderSelectedSchool() {
   els.copyShareBtn?.classList.remove("is-hidden");
 }
 
+function renderGradeFilters() {
+  if (!els.gradeFilterRow) return;
+
+  const filters = getAvailableGradeFilters(state.selectedSchool, state.schedules);
+  const availableValues = filters.map((filter) => filter.value);
+  if (!availableValues.includes(state.selectedGrade)) state.selectedGrade = "all";
+
+  els.gradeFilterRow.innerHTML = filters.map((filter) => `
+    <button
+      type="button"
+      class="filter-chip grade-chip ${state.selectedGrade === filter.value ? "active" : ""}"
+      data-grade="${escapeHtml(filter.value)}"
+      aria-pressed="${state.selectedGrade === filter.value ? "true" : "false"}"
+    >${escapeHtml(filter.label)}</button>
+  `).join("");
+}
+
 function renderSummary() {
-  const monthSchedules = getMonthSchedules();
+  const monthSchedules = getMonthSchedules().filter((schedule) => isScheduleVisibleByGrade(schedule, state.selectedGrade));
   const monthTitle = formatMonthTitle(state.currentDate);
   els.summaryTitle.textContent = monthTitle;
   els.summaryCount.textContent = state.selectedSchool
@@ -542,7 +571,8 @@ function renderCalendar() {
   const startDate = new Date(year, month, 1 - firstDay.getDay());
   const todayKey = toDateKey(new Date());
   const monthSchedules = getMonthSchedules().filter((schedule) => {
-    return state.activeFilter === "all" || schedule.type === state.activeFilter;
+    return isScheduleVisibleByGrade(schedule, state.selectedGrade) &&
+      (state.activeFilter === "all" || schedule.type === state.activeFilter);
   });
 
   const schedulesByDate = monthSchedules.reduce((acc, schedule) => {
@@ -598,7 +628,11 @@ function renderSelectedDatePanel() {
   }
 
   const date = parseDateKey(state.selectedDateKey);
-  const daySchedules = getSelectedSchoolSchedules().filter((schedule) => schedule.date === state.selectedDateKey);
+  const daySchedules = getSelectedSchoolSchedules().filter((schedule) => {
+    return schedule.date === state.selectedDateKey &&
+      isScheduleVisibleByGrade(schedule, state.selectedGrade) &&
+      (state.activeFilter === "all" || schedule.type === state.activeFilter);
+  });
   const label = `${date.getMonth() + 1}.${date.getDate()} ${weekdays[date.getDay()]}`;
 
   els.selectedDatePanel.classList.remove("is-hidden");
@@ -641,7 +675,12 @@ function renderScheduleList() {
   }
 
   if (!schedules.length) {
-    els.scheduleList.innerHTML = `<div class="empty-state">${isSearching ? "검색된 학사일정이 없어요." : "이번 달 등록된 학사일정이 없어요."}</div>`;
+    const emptyMessage = isSearching
+      ? "검색된 학사일정이 없어요."
+      : state.selectedGrade !== "all"
+        ? "선택한 학년에 해당하는 일정이 없습니다."
+        : "이번 달 등록된 학사일정이 없어요.";
+    els.scheduleList.innerHTML = `<div class="empty-state">${emptyMessage}</div>`;
     return;
   }
 
@@ -656,6 +695,7 @@ function renderScheduleList() {
           <h3>${escapeHtml(schedule.title)}</h3>
           ${schedule.content ? `<p>${escapeHtml(schedule.content)}</p>` : ""}
           <span class="type-badge ${schedule.type}">${typeLabels[schedule.type] || typeLabels.normal}</span>
+          <span class="grade-badge">${escapeHtml(getGradeLabel(schedule))}</span>
         </div>
       </article>
     `;
@@ -674,6 +714,7 @@ function renderScheduleLoading() {
 
 function renderAll() {
   renderSelectedSchool();
+  renderGradeFilters();
   renderSummary();
   renderCalendar();
   renderScheduleList();
@@ -687,6 +728,7 @@ async function selectSchool(school) {
   state.selectedSchool = school;
   state.scheduleSearchKeyword = "";
   state.selectedDateKey = "";
+  state.selectedGrade = "all";
   els.scheduleKeyword.value = "";
   saveSelectedSchool(school);
   els.schoolResults.innerHTML = "";
@@ -702,6 +744,7 @@ async function resetSchool() {
   state.schedules = [];
   state.scheduleSearchKeyword = "";
   state.selectedDateKey = "";
+  state.selectedGrade = "all";
   els.scheduleKeyword.value = "";
   clearSelectedSchoolStorage();
   els.schoolResults.innerHTML = "";
@@ -747,7 +790,11 @@ function handleCalendarDateClick(event) {
   if (!cell || !els.calendar?.contains(cell)) return;
 
   const clickedDate = cell.dataset.date;
-  const clickedSchedules = getSelectedSchoolSchedules().filter((schedule) => schedule.date === clickedDate);
+  const clickedSchedules = getSelectedSchoolSchedules().filter((schedule) => {
+    return schedule.date === clickedDate &&
+      isScheduleVisibleByGrade(schedule, state.selectedGrade) &&
+      (state.activeFilter === "all" || schedule.type === state.activeFilter);
+  });
 
   if (!clickedSchedules.length) return;
 
@@ -824,9 +871,17 @@ function bindEvents() {
     });
   });
 
+  els.gradeFilterRow?.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-grade]");
+    if (!button) return;
+
+    state.selectedGrade = button.dataset.grade;
+    state.selectedDateKey = "";
+    renderAll();
+  });
+
   els.scheduleKeyword.addEventListener("input", () => {
     state.scheduleSearchKeyword = els.scheduleKeyword.value;
-    state.selectedDateKey = "";
     state.selectedDateKey = "";
     renderCalendar();
     renderScheduleList();
@@ -847,6 +902,93 @@ async function init() {
 // ------------------------------------------------------------
 // 유틸
 // ------------------------------------------------------------
+
+const GRADE_FIELD_MAP = [
+  { grade: "1", fields: ["ONE_GRADE_EVENT_YN", "ONE_GRADE_EVENT_AT", "ONE_GRADE_EVENT", "oneGradeEventYn"] },
+  { grade: "2", fields: ["TW_GRADE_EVENT_YN", "TWO_GRADE_EVENT_YN", "TW_GRADE_EVENT_AT", "twoGradeEventYn"] },
+  { grade: "3", fields: ["THREE_GRADE_EVENT_YN", "THREE_GRADE_EVENT_AT", "threeGradeEventYn"] },
+  { grade: "4", fields: ["FR_GRADE_EVENT_YN", "FOUR_GRADE_EVENT_YN", "FR_GRADE_EVENT_AT", "fourGradeEventYn"] },
+  { grade: "5", fields: ["FIV_GRADE_EVENT_YN", "FIVE_GRADE_EVENT_YN", "FIV_GRADE_EVENT_AT", "fiveGradeEventYn"] },
+  { grade: "6", fields: ["SIX_GRADE_EVENT_YN", "SIX_GRADE_EVENT_AT", "sixGradeEventYn"] }
+];
+
+function normalizeScheduleDate(value = "") {
+  const raw = String(value || "").trim();
+  if (/^\d{8}$/.test(raw)) {
+    return `${raw.slice(0, 4)}-${raw.slice(4, 6)}-${raw.slice(6, 8)}`;
+  }
+  return raw;
+}
+
+function isYesValue(value) {
+  return value === true || ["Y", "YES", "1", "TRUE", "O", "○"].includes(String(value || "").trim().toUpperCase());
+}
+
+function hasGradeFields(schedule) {
+  return GRADE_FIELD_MAP.some(({ fields }) => fields.some((field) => Object.prototype.hasOwnProperty.call(schedule, field)));
+}
+
+function getGradesFromSchedule(schedule = {}) {
+  if (Array.isArray(schedule.grades) && schedule.grades.length) {
+    return [...new Set(schedule.grades.map((grade) => String(grade).replace(/[^1-6]/g, "")).filter(Boolean))];
+  }
+
+  const gradesFromFields = GRADE_FIELD_MAP
+    .filter(({ fields }) => fields.some((field) => isYesValue(schedule[field])))
+    .map(({ grade }) => grade);
+
+  if (gradesFromFields.length) return gradesFromFields;
+
+  const text = `${schedule.title || ""} ${schedule.content || ""} ${schedule.EVENT_NM || ""} ${schedule.EVENT_CNTNT || ""}`;
+  if (/전\s*학년|전체\s*학년|공통/.test(text)) return getDefaultGradesForSchool(state.selectedSchool);
+
+  const gradesFromText = [...text.matchAll(/([1-6])\s*학년/g)].map((match) => match[1]);
+  return [...new Set(gradesFromText)];
+}
+
+function isAllGradeSchedule(schedule = {}) {
+  if (schedule.isAllGrades === true || schedule.allGrades === true) return true;
+
+  const hasFields = hasGradeFields(schedule);
+  const grades = Array.isArray(schedule.grades) ? schedule.grades.map(String) : getGradesFromSchedule(schedule);
+  const defaultGrades = getDefaultGradesForSchool(state.selectedSchool);
+
+  if (!grades.length) return true;
+  return defaultGrades.every((grade) => grades.includes(grade));
+}
+
+function getDefaultGradesForSchool(school = state.selectedSchool) {
+  const typeText = `${school?.schoolType || ""} ${school?.schoolName || ""}`;
+  if (/초등|초등학교|초$/.test(typeText)) return ["1", "2", "3", "4", "5", "6"];
+  if (/중학|중학교|고등|고등학교|중$|고$/.test(typeText)) return ["1", "2", "3"];
+  return ["1", "2", "3", "4", "5", "6"];
+}
+
+function getAvailableGradeFilters(schoolInfo, schedules = []) {
+  const defaultGrades = getDefaultGradesForSchool(schoolInfo);
+  const maxDefaultGrade = Math.max(...defaultGrades.map(Number));
+  const maxScheduleGrade = Math.max(0, ...schedules.flatMap((schedule) => (schedule.grades || []).map(Number).filter(Boolean)));
+  const maxGrade = Math.max(maxDefaultGrade, maxScheduleGrade);
+  const grades = Array.from({ length: maxGrade }, (_, index) => String(index + 1));
+
+  return [
+    { value: "all", label: "전체" },
+    ...grades.map((grade) => ({ value: grade, label: `${grade}학년` }))
+  ];
+}
+
+function isScheduleVisibleByGrade(schedule, selectedGrade) {
+  if (selectedGrade === "all") return true;
+  if (schedule.isAllGrades) return true;
+  const grades = Array.isArray(schedule.grades) ? schedule.grades.map(String) : [];
+  return grades.includes(String(selectedGrade));
+}
+
+function getGradeLabel(schedule) {
+  if (schedule.isAllGrades) return "전학년";
+  const grades = Array.isArray(schedule.grades) ? schedule.grades.map(String).filter(Boolean) : [];
+  return grades.length ? `${grades.join("·")}학년` : "학년공통";
+}
 
 function getScheduleTooltip(schedule) {
   const parts = [schedule.title, schedule.content].filter(Boolean);
@@ -906,11 +1048,12 @@ function getFilteredSchedules() {
 
   return baseSchedules.filter((schedule) => {
     const matchedFilter = state.activeFilter === "all" || schedule.type === state.activeFilter;
+    const matchedGrade = isScheduleVisibleByGrade(schedule, state.selectedGrade);
     const matchedKeyword = !keyword || [schedule.title, schedule.content]
       .join(" ")
       .toLowerCase()
       .includes(keyword);
-    return matchedFilter && matchedKeyword;
+    return matchedFilter && matchedGrade && matchedKeyword;
   }).sort((a, b) => a.date.localeCompare(b.date));
 }
 
