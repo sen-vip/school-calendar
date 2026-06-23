@@ -1400,7 +1400,7 @@ main {
 }
 
 .day-cell.has-schedule::after {
-  content: "클릭 시 그날 일정";
+  content: "눌러보기";
   display: none;
   margin-top: 4px;
   color: var(--primary);
@@ -1424,6 +1424,94 @@ main {
   }
 
   .copy-share-button {
+    width: 100%;
+  }
+}
+
+
+/* 2-9.3 hotfix: restore search and safely support date click */
+.day-cell {
+  position: relative;
+}
+
+.day-cell.has-schedule {
+  cursor: pointer;
+}
+
+.day-cell.has-schedule::after {
+  content: "클릭 시 그날 일정";
+  display: none;
+  margin-top: 4px;
+  color: var(--primary);
+  font-size: 10px;
+  font-weight: 950;
+}
+
+.day-cell.has-schedule:hover::after {
+  display: block;
+}
+
+.day-cell.selected-date {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(91, 95, 239, 0.12);
+  background: #fff;
+}
+
+.selected-date-panel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding: 12px 14px;
+  border: 1px solid rgba(91, 95, 239, 0.18);
+  border-radius: 18px;
+  background: var(--primary-soft);
+  color: var(--primary-dark);
+}
+
+.selected-date-panel.is-hidden {
+  display: none;
+}
+
+.selected-date-panel strong {
+  display: block;
+  margin-bottom: 2px;
+  font-size: 16px;
+  font-weight: 950;
+}
+
+.selected-date-panel span {
+  color: #4F46E5;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.selected-date-panel button {
+  flex: 0 0 auto;
+  border: 0;
+  border-radius: 999px;
+  padding: 9px 11px;
+  background: #fff;
+  color: var(--primary-dark);
+  font-size: 12px;
+  font-weight: 950;
+  box-shadow: inset 0 0 0 1px rgba(91, 95, 239, 0.16);
+}
+
+@media (hover: none) {
+  .day-cell.has-schedule::after {
+    display: block;
+  }
+}
+
+@media (max-width: 640px) {
+  .selected-date-panel {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .selected-date-panel button {
     width: 100%;
   }
 }

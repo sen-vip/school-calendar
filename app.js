@@ -557,17 +557,27 @@ function renderCalendar() {
   for (let i = 0; i < 42; i += 1) {
     const cellDate = new Date(startDate);
     cellDate.setDate(startDate.getDate() + i);
+
     const key = toDateKey(cellDate);
     const schedules = schedulesByDate[key] || [];
     const visibleSchedules = schedules.slice(0, 2);
     const moreCount = Math.max(0, schedules.length - visibleSchedules.length);
     const classes = ["day-cell"];
+
     if (cellDate.getMonth() !== month) classes.push("other-month");
     if (key === todayKey) classes.push("today");
+    if (state.selectedDateKey === key) classes.push("selected-date");
     if (schedules.length) classes.push("has-schedule");
 
     cells.push(`
-      <div class="${classes.join(" ")}" aria-label="${key}">
+      <div
+        class="${classes.join(" ")}"
+        role="${schedules.length ? "button" : "gridcell"}"
+        tabindex="${schedules.length ? "0" : "-1"}"
+        data-date="${key}"
+        aria-label="${key}${schedules.length ? ` 일정 ${schedules.length}개` : ""}"
+        title="${escapeHtml(getDateTooltip(key, schedules))}"
+      >
         <div class="day-number">${cellDate.getDate()}</div>
         ${visibleSchedules.map((schedule) => `<span class="calendar-schedule ${schedule.type}" title="${escapeHtml(getScheduleTooltip(schedule))}">${escapeHtml(schedule.title)}</span>`).join("")}
         ${moreCount ? `<span class="more-count">+${moreCount}</span>` : ""}
@@ -576,7 +586,6 @@ function renderCalendar() {
   }
 
   els.calendar.innerHTML = cells.join("");
-  });
 }
 
 function renderSelectedDatePanel() {
@@ -596,7 +605,7 @@ function renderSelectedDatePanel() {
   els.selectedDatePanel.innerHTML = `
     <div>
       <strong>${label}</strong>
-      <span>선택한 날짜 일정 ${daySchedules.length}개 · 달력 날짜를 누르면 그날 일정만 볼 수 있어요.</span>
+      <span>선택한 날짜 일정 ${daySchedules.length}개</span>
     </div>
     <button type="button" id="clearSelectedDateBtn">전체 일정 보기</button>
   `;
@@ -612,7 +621,9 @@ function renderScheduleList() {
   const schedules = getFilteredSchedules();
   const isSearching = Boolean(state.scheduleSearchKeyword.trim());
   const isDateSelected = Boolean(state.selectedDateKey);
+
   renderSelectedDatePanel();
+
   els.scheduleListTitle.textContent = isSearching
     ? "검색 결과"
     : isDateSelected
@@ -639,7 +650,7 @@ function renderScheduleList() {
     const monthDay = `${date.getMonth() + 1}.${date.getDate()}`;
     const weekday = weekdays[date.getDay()];
     return `
-      <article class="schedule-item" title="${escapeHtml(schedule.title)}">
+      <article class="schedule-item" title="${escapeHtml(getScheduleTooltip(schedule))}">
         <div class="date-pill"><span>${monthDay}</span><small>${weekday}</small></div>
         <div class="schedule-body">
           <h3>${escapeHtml(schedule.title)}</h3>
@@ -731,7 +742,6 @@ async function goToday() {
   renderAll();
 }
 
-
 function handleCalendarDateClick(event) {
   const cell = event.target.closest(".day-cell[data-date]");
   if (!cell || !els.calendar?.contains(cell)) return;
@@ -817,6 +827,7 @@ function bindEvents() {
   els.scheduleKeyword.addEventListener("input", () => {
     state.scheduleSearchKeyword = els.scheduleKeyword.value;
     state.selectedDateKey = "";
+    state.selectedDateKey = "";
     renderCalendar();
     renderScheduleList();
   });
@@ -887,15 +898,20 @@ function getSelectedSchoolSchedules() {
 
 function getFilteredSchedules() {
   const keyword = state.scheduleSearchKeyword.trim().toLowerCase();
-  const baseSchedules = keyword ? getSelectedSchoolSchedules() : getMonthSchedules();
+  let baseSchedules = keyword ? getSelectedSchoolSchedules() : getMonthSchedules();
 
-  return baseSchedules
-    .filter((schedule) => state.activeFilter === "all" || schedule.type === state.activeFilter)
-    .filter((schedule) => {
-      if (!keyword) return true;
-      return `${schedule.title} ${schedule.content}`.toLowerCase().includes(keyword);
-    })
-    .sort((a, b) => a.date.localeCompare(b.date));
+  if (state.selectedDateKey && !keyword) {
+    baseSchedules = baseSchedules.filter((schedule) => schedule.date === state.selectedDateKey);
+  }
+
+  return baseSchedules.filter((schedule) => {
+    const matchedFilter = state.activeFilter === "all" || schedule.type === state.activeFilter;
+    const matchedKeyword = !keyword || [schedule.title, schedule.content]
+      .join(" ")
+      .toLowerCase()
+      .includes(keyword);
+    return matchedFilter && matchedKeyword;
+  }).sort((a, b) => a.date.localeCompare(b.date));
 }
 
 function classifyScheduleType(title = "", content = "") {
