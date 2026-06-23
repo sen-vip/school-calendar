@@ -68,6 +68,7 @@ const state = {
   searchKeyword: "",
   selectedOfficeCode: "",
   scheduleSearchKeyword: "",
+  selectedDateKey: "",
   schools: [],
   schedules: [],
   isSchoolLoading: false,
@@ -95,6 +96,8 @@ const els = {
   calendar: document.querySelector("#calendar"),
   scheduleListTitle: document.querySelector("#scheduleListTitle"),
   scheduleList: document.querySelector("#scheduleList"),
+  selectedDatePanel: document.querySelector("#selectedDatePanel"),
+  calendarTooltip: document.querySelector("#calendarTooltip"),
   scheduleKeyword: document.querySelector("#scheduleKeyword"),
   filterButtons: document.querySelectorAll(".filter-chip"),
   quickSchoolButtons: document.querySelectorAll("[data-school-keyword]")
@@ -120,6 +123,7 @@ async function searchSchools(keyword, officeCode = state.selectedOfficeCode) {
   state.selectedOfficeCode = officeCode || "";
   setSchoolLoading(true);
   clearError();
+  renderProxyWakeNotice("학교 검색을 준비하고 있어요. Render 무료 서버는 첫 요청 시 잠시 깨어나는 시간이 걸릴 수 있어요.");
   renderSchoolResults([]);
 
   try {
@@ -168,6 +172,7 @@ async function fetchSchedules({ officeCode, schoolCode, year, month }) {
 
   setScheduleLoading(true);
   clearError();
+  renderProxyWakeNotice("학사일정을 불러오고 있어요. 첫 요청은 서버가 깨어나는 동안 조금 느릴 수 있어요.");
   renderScheduleLoading();
 
   try {
@@ -290,6 +295,8 @@ function clearError() {
   state.errorMessage = "";
   const existing = document.querySelector(".error-box");
   if (existing) existing.remove();
+  const wakeNotice = document.querySelector(".proxy-wake-notice");
+  if (wakeNotice) wakeNotice.remove();
 }
 
 function saveSelectedSchool(school) {
@@ -313,6 +320,20 @@ function clearSelectedSchoolStorage() {
 // ------------------------------------------------------------
 // 렌더링
 // ------------------------------------------------------------
+function renderProxyWakeNotice(message) {
+  if (API_CONFIG.useMock) return;
+  const target = document.querySelector("main");
+  if (!target) return;
+
+  const existing = document.querySelector(".proxy-wake-notice");
+  if (existing) existing.remove();
+
+  const box = document.createElement("div");
+  box.className = "proxy-wake-notice";
+  box.innerHTML = `<span aria-hidden="true">⏳</span><p>${message}</p>`;
+  target.prepend(box);
+}
+
 function renderError(message) {
   clearError();
   state.errorMessage = message;
@@ -365,14 +386,16 @@ function renderSchoolResults(schools) {
     </div>
     ${schools.map((school, index) => `
       <article class="school-card">
-        <div>
-          <div class="school-card-top">
+        <div class="school-card-main">
+          <div class="school-card-title-line">
             <h3>${escapeHtml(school.schoolName)}</h3>
-            <span class="region-badge">${escapeHtml(getOfficeShortName(school.officeCode || school.region))}</span>
             <span class="school-type-badge">${escapeHtml(school.schoolType || "학교")}</span>
           </div>
-          <p>${escapeHtml(school.region)} · ${escapeHtml(school.schoolType)}</p>
-          <p>${escapeHtml(school.address)}</p>
+          <div class="school-card-meta-line">
+            <span class="region-badge">${escapeHtml(getOfficeShortName(school.officeCode || school.region))}</span>
+            <span>${escapeHtml(school.region)}</span>
+          </div>
+          <p class="school-address">${escapeHtml(school.address)}</p>
         </div>
         <button type="button" data-school-index="${index}">이 학교 선택</button>
       </article>
@@ -419,6 +442,61 @@ function renderSummary() {
     <span class="summary-badge event">행사·체험 ${counts.event || 0}</span>
   `;
 }
+
+
+function renderCalendarTooltip(dateKey, target) {
+  if (!els.calendarTooltip || !dateKey || !target) return;
+
+  const schedules = getSelectedSchoolSchedules().filter((schedule) => schedule.date === dateKey);
+  if (!schedules.length) {
+    hideCalendarTooltip();
+    return;
+  }
+
+  const date = parseDateKey(dateKey);
+  const dateLabel = `${date.getMonth() + 1}.${date.getDate()} ${weekdays[date.getDay()]}`;
+
+  els.calendarTooltip.innerHTML = `
+    <div class="calendar-tooltip-head">
+      <strong>${escapeHtml(dateLabel)}</strong>
+      <span>${schedules.length}개 일정</span>
+    </div>
+    <div class="calendar-tooltip-list">
+      ${schedules.map((schedule) => `
+        <div class="calendar-tooltip-item">
+          <div class="calendar-tooltip-title">
+            <span class="type-dot ${schedule.type}"></span>
+            <strong>${escapeHtml(schedule.title)}</strong>
+            <em>${typeLabels[schedule.type] || typeLabels.normal}</em>
+          </div>
+          ${schedule.content ? `<p>${escapeHtml(schedule.content)}</p>` : ""}
+        </div>
+      `).join("")}
+    </div>
+  `;
+
+  els.calendarTooltip.classList.remove("is-hidden");
+  const tooltipRect = els.calendarTooltip.getBoundingClientRect();
+  const rect = target.getBoundingClientRect();
+  const viewportPadding = 12;
+
+  let left = rect.left + rect.width / 2 - tooltipRect.width / 2;
+  left = Math.max(viewportPadding, Math.min(left, window.innerWidth - tooltipRect.width - viewportPadding));
+
+  let top = rect.bottom + 8;
+  if (top + tooltipRect.height > window.innerHeight - viewportPadding) {
+    top = rect.top - tooltipRect.height - 8;
+  }
+
+  els.calendarTooltip.style.left = `${left}px`;
+  els.calendarTooltip.style.top = `${Math.max(viewportPadding, top)}px`;
+}
+
+function hideCalendarTooltip() {
+  if (!els.calendarTooltip) return;
+  els.calendarTooltip.classList.add("is-hidden");
+}
+
 
 function renderCalendar() {
   const date = state.currentDate;
@@ -469,12 +547,82 @@ function renderCalendar() {
   }
 
   els.calendar.innerHTML = cells.join("");
+
+  els.calendar.querySelectorAll(".day-cell[data-date]").forEach((cell) => {
+    cell.addEventListener("mouseenter", () => renderCalendarTooltip(cell.dataset.date, cell));
+    cell.addEventListener("mouseleave", hideCalendarTooltip);
+    cell.addEventListener("focus", () => renderCalendarTooltip(cell.dataset.date, cell));
+    cell.addEventListener("blur", hideCalendarTooltip);
+    cell.addEventListener("click", () => {
+      const clickedDate = cell.dataset.date;
+      const clickedSchedules = getSelectedSchoolSchedules().filter((schedule) => schedule.date === clickedDate);
+      if (!clickedSchedules.length) return;
+      renderCalendarTooltip(clickedDate, cell);
+      state.selectedDateKey = state.selectedDateKey === clickedDate ? "" : clickedDate;
+      state.scheduleSearchKeyword = "";
+      if (els.scheduleKeyword) els.scheduleKeyword.value = "";
+      renderCalendar();
+      renderScheduleList();
+      document.querySelector("#scheduleListTitle")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  });
+
+  els.calendar.querySelectorAll(".day-cell[data-date]").forEach((cell) => {
+    cell.addEventListener("click", () => {
+      const clickedDate = cell.dataset.date;
+      const clickedSchedules = getSelectedSchoolSchedules().filter((schedule) => schedule.date === clickedDate);
+      if (!clickedSchedules.length) return;
+
+      state.selectedDateKey = state.selectedDateKey === clickedDate ? "" : clickedDate;
+      state.scheduleSearchKeyword = "";
+  state.selectedDateKey = "";
+      if (els.scheduleKeyword) els.scheduleKeyword.value = "";
+      renderCalendar();
+      renderScheduleList();
+      document.querySelector("#scheduleListTitle")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  });
+}
+
+function renderSelectedDatePanel() {
+  if (!els.selectedDatePanel) return;
+
+  if (!state.selectedDateKey) {
+    els.selectedDatePanel.classList.add("is-hidden");
+    els.selectedDatePanel.innerHTML = "";
+    return;
+  }
+
+  const date = parseDateKey(state.selectedDateKey);
+  const daySchedules = getSelectedSchoolSchedules().filter((schedule) => schedule.date === state.selectedDateKey);
+  const label = `${date.getMonth() + 1}.${date.getDate()} ${weekdays[date.getDay()]}`;
+
+  els.selectedDatePanel.classList.remove("is-hidden");
+  els.selectedDatePanel.innerHTML = `
+    <div>
+      <strong>${label}</strong>
+      <span>선택한 날짜 일정 ${daySchedules.length}개</span>
+    </div>
+    <button type="button" id="clearSelectedDateBtn">전체 일정 보기</button>
+  `;
+
+  document.querySelector("#clearSelectedDateBtn")?.addEventListener("click", () => {
+    state.selectedDateKey = "";
+    renderCalendar();
+    renderScheduleList();
+  });
 }
 
 function renderScheduleList() {
   const schedules = getFilteredSchedules();
   const isSearching = Boolean(state.scheduleSearchKeyword.trim());
-  els.scheduleListTitle.textContent = isSearching ? "검색 결과" : `${state.currentDate.getMonth() + 1}월 주요 학사일정`;
+  const isDateSelected = Boolean(state.selectedDateKey);
+  renderSelectedDatePanel();
+  els.scheduleListTitle.textContent = isSearching
+    ? "검색 결과"
+    : isDateSelected
+      ? "선택한 날짜 일정"
+      : `${state.currentDate.getMonth() + 1}월 주요 학사일정`;
 
   if (state.isScheduleLoading) {
     renderScheduleLoading();
@@ -529,9 +677,11 @@ function renderAll() {
 // 동작
 // ------------------------------------------------------------
 async function selectSchool(school) {
+  hideCalendarTooltip();
   if (!school) return;
   state.selectedSchool = school;
   state.scheduleSearchKeyword = "";
+  state.selectedDateKey = "";
   els.scheduleKeyword.value = "";
   saveSelectedSchool(school);
   els.schoolResults.innerHTML = "";
@@ -543,9 +693,11 @@ async function selectSchool(school) {
 }
 
 async function resetSchool() {
+  hideCalendarTooltip();
   state.selectedSchool = null;
   state.schedules = [];
   state.scheduleSearchKeyword = "";
+  state.selectedDateKey = "";
   els.scheduleKeyword.value = "";
   clearSelectedSchoolStorage();
   els.schoolResults.innerHTML = "";
@@ -572,12 +724,16 @@ async function loadSchedulesForCurrentMonth() {
 }
 
 async function changeMonth(offset) {
+  hideCalendarTooltip();
+  state.selectedDateKey = "";
   state.currentDate = new Date(state.currentDate.getFullYear(), state.currentDate.getMonth() + offset, 1);
   await loadSchedulesForCurrentMonth();
   renderAll();
 }
 
 async function goToday() {
+  hideCalendarTooltip();
+  state.selectedDateKey = "";
   const today = new Date();
   state.currentDate = new Date(today.getFullYear(), today.getMonth(), 1);
   await loadSchedulesForCurrentMonth();
@@ -617,6 +773,10 @@ function bindEvents() {
 
   els.resetSchoolBtn.addEventListener("click", resetSchool);
   els.topChangeSchoolBtn?.addEventListener("click", resetSchool);
+  els.topSelectedSchool?.addEventListener("click", (event) => {
+    event.preventDefault();
+    document.querySelector("#selectedSchoolCard")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
   els.prevMonthBtn.addEventListener("click", () => changeMonth(-1));
   els.nextMonthBtn.addEventListener("click", () => changeMonth(1));
   els.todayBtn.addEventListener("click", goToday);
@@ -632,9 +792,14 @@ function bindEvents() {
 
   els.scheduleKeyword.addEventListener("input", () => {
     state.scheduleSearchKeyword = els.scheduleKeyword.value;
+    state.selectedDateKey = "";
+    hideCalendarTooltip();
     renderCalendar();
     renderScheduleList();
   });
+
+  document.addEventListener("scroll", hideCalendarTooltip, { passive: true });
+  window.addEventListener("resize", hideCalendarTooltip);
 }
 
 async function init() {
