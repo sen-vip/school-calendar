@@ -12,9 +12,10 @@
     <div class="top-bar">
       <a class="top-brand" href="#homeSection" aria-label="홈으로 이동">
         <span class="top-brand-icon">🏫</span>
-        <span>우리학교 학사일정</span>
+        <span id="topSelectedSchool">우리학교 학사일정</span>
       </a>
       <div class="top-actions">
+        <button type="button" class="top-change-school is-hidden" id="topChangeSchoolBtn">학교변경</button>
         <a class="help-button" href="https://github.com/sen-vip/school-calendar#readme" target="_blank" rel="noopener noreferrer">도움말</a>
       </div>
     </div>
@@ -34,22 +35,24 @@
         <div class="card-heading">
           <div>
             <span class="kicker">학교 찾기</span>
-            <h2 id="schoolSearchTitle">학교명을 입력해 주세요</h2>
+            <h2 id="schoolSearchTitle">지역과 학교명을 입력해 주세요</h2>
           </div>
           <button type="button" class="soft-button" id="resetSchoolBtn">다시 선택</button>
         </div>
 
-        <p class="card-desc">전국 배포를 고려해 학교 검색형 구조로 준비했어요.</p>
+        <p class="card-desc">같은 학교명이 많을 수 있어요. 지역을 먼저 선택하면 더 정확하게 찾을 수 있어요.</p>
 
         <form class="school-search-form" id="schoolSearchForm">
+          <label class="sr-only" for="schoolRegion">시도교육청 선택</label>
+          <select id="schoolRegion" class="region-select" aria-label="시도교육청 선택"></select>
           <label class="sr-only" for="schoolKeyword">학교명 검색</label>
-          <input id="schoolKeyword" type="search" placeholder="예: 서울학돌초, 학돌중학교" autocomplete="off" />
+          <input id="schoolKeyword" type="search" placeholder="예: 대청, 서울대청초" autocomplete="off" />
           <button type="submit">검색</button>
         </form>
 
         <div class="helper-row">
           <span>빠른 예시</span>
-          <button type="button" class="mini-chip" data-school-keyword="서울">서울</button>
+          <button type="button" class="mini-chip" data-office-code="B10" data-school-keyword="">서울</button>
           <button type="button" class="mini-chip" data-school-keyword="중학교">중학교</button>
           <button type="button" class="mini-chip" data-school-keyword="고등학교">고등학교</button>
         </div>

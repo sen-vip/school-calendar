@@ -13,6 +13,28 @@ const STORAGE_KEYS = {
   selectedSchool: "schoolCalendar.selectedSchool"
 };
 
+const OFFICE_OPTIONS = [
+  { code: "", name: "전체" },
+  { code: "B10", name: "서울특별시교육청", shortName: "서울" },
+  { code: "C10", name: "부산광역시교육청", shortName: "부산" },
+  { code: "D10", name: "대구광역시교육청", shortName: "대구" },
+  { code: "E10", name: "인천광역시교육청", shortName: "인천" },
+  { code: "F10", name: "광주광역시교육청", shortName: "광주" },
+  { code: "G10", name: "대전광역시교육청", shortName: "대전" },
+  { code: "H10", name: "울산광역시교육청", shortName: "울산" },
+  { code: "I10", name: "세종특별자치시교육청", shortName: "세종" },
+  { code: "J10", name: "경기도교육청", shortName: "경기" },
+  { code: "K10", name: "강원특별자치도교육청", shortName: "강원" },
+  { code: "M10", name: "충청북도교육청", shortName: "충북" },
+  { code: "N10", name: "충청남도교육청", shortName: "충남" },
+  { code: "P10", name: "전북특별자치도교육청", shortName: "전북" },
+  { code: "Q10", name: "전라남도교육청", shortName: "전남" },
+  { code: "R10", name: "경상북도교육청", shortName: "경북" },
+  { code: "S10", name: "경상남도교육청", shortName: "경남" },
+  { code: "T10", name: "제주특별자치도교육청", shortName: "제주" }
+];
+
+
 const mockSchools = [
   { schoolName: "서울학돌초등학교", region: "서울특별시교육청", officeCode: "B10", schoolCode: "7010000", schoolType: "초등학교", address: "서울특별시 중구 학돌로 10" },
   { schoolName: "부산학돌중학교", region: "부산광역시교육청", officeCode: "C10", schoolCode: "7020000", schoolType: "중학교", address: "부산광역시 해운대구 학돌로 20" },
@@ -44,6 +66,7 @@ const state = {
   currentDate: new Date(2026, 5, 1),
   activeFilter: "all",
   searchKeyword: "",
+  selectedOfficeCode: "",
   scheduleSearchKeyword: "",
   schools: [],
   schedules: [],
@@ -55,6 +78,9 @@ const state = {
 const els = {
   schoolSearchForm: document.querySelector("#schoolSearchForm"),
   schoolKeyword: document.querySelector("#schoolKeyword"),
+  schoolRegion: document.querySelector("#schoolRegion"),
+  topSelectedSchool: document.querySelector("#topSelectedSchool"),
+  topChangeSchoolBtn: document.querySelector("#topChangeSchoolBtn"),
   schoolResults: document.querySelector("#schoolResults"),
   resetSchoolBtn: document.querySelector("#resetSchoolBtn"),
   selectedSchoolName: document.querySelector("#selectedSchoolName"),
@@ -86,19 +112,20 @@ const weekdays = ["일", "월", "화", "수", "목", "금", "토"];
 // ------------------------------------------------------------
 // API 함수
 // ------------------------------------------------------------
-async function searchSchools(keyword) {
+async function searchSchools(keyword, officeCode = state.selectedOfficeCode) {
   const trimmed = keyword.trim();
   if (!trimmed) return [];
 
   state.searchKeyword = trimmed;
+  state.selectedOfficeCode = officeCode || "";
   setSchoolLoading(true);
   clearError();
   renderSchoolResults([]);
 
   try {
     const schools = API_CONFIG.useMock
-      ? await searchSchoolsFromMock(trimmed)
-      : await searchSchoolsFromProxy(trimmed);
+      ? await searchSchoolsFromMock(trimmed, officeCode)
+      : await searchSchoolsFromProxy(trimmed, officeCode);
 
     state.schools = schools;
     return schools;
@@ -111,19 +138,23 @@ async function searchSchools(keyword) {
   }
 }
 
-async function searchSchoolsFromMock(keyword) {
+async function searchSchoolsFromMock(keyword, officeCode = "") {
   await wait(240);
   const normalizedKeyword = keyword.trim().toLowerCase();
   return mockSchools.filter((school) => {
-    return [school.schoolName, school.region, school.schoolType, school.address]
+    const matchedKeyword = [school.schoolName, school.region, school.schoolType, school.address]
       .join(" ")
       .toLowerCase()
       .includes(normalizedKeyword);
+    const matchedRegion = !officeCode || school.officeCode === officeCode;
+    return matchedKeyword && matchedRegion;
   });
 }
 
-async function searchSchoolsFromProxy(keyword) {
-  const url = `${API_CONFIG.baseUrl}/api/schools?keyword=${encodeURIComponent(keyword)}`;
+async function searchSchoolsFromProxy(keyword, officeCode = "") {
+  const params = new URLSearchParams({ keyword });
+  if (officeCode) params.set("officeCode", officeCode);
+  const url = `${API_CONFIG.baseUrl}/api/schools?${params.toString()}`;
   const response = await fetch(url);
 
   if (!response.ok) throw new Error("학교 검색 실패");
@@ -179,6 +210,45 @@ async function fetchSchedulesFromProxy({ officeCode, schoolCode, year, month }) 
   return data.schedules || [];
 }
 
+
+function getOfficeName(code) {
+  return OFFICE_OPTIONS.find((office) => office.code === code)?.name || "전체";
+}
+
+function getOfficeShortName(codeOrRegion = "") {
+  const matched = OFFICE_OPTIONS.find((office) => office.code === codeOrRegion || office.name === codeOrRegion);
+  if (matched) return matched.shortName || matched.name;
+  return String(codeOrRegion || "").replace("특별시교육청", "").replace("광역시교육청", "").replace("특별자치시교육청", "").replace("특별자치도교육청", "").replace("교육청", "");
+}
+
+function renderOfficeOptions() {
+  if (!els.schoolRegion) return;
+  els.schoolRegion.innerHTML = OFFICE_OPTIONS.map((office) => `
+    <option value="${escapeHtml(office.code)}">${escapeHtml(office.name)}</option>
+  `).join("");
+}
+
+function renderTopSelectedSchool() {
+  if (!els.topSelectedSchool) return;
+
+  if (!state.selectedSchool) {
+    els.topSelectedSchool.textContent = "우리학교 학사일정";
+    els.topSelectedSchool.title = "우리학교 학사일정";
+    els.topChangeSchoolBtn?.classList.add("is-hidden");
+    return;
+  }
+
+  els.topSelectedSchool.textContent = state.selectedSchool.schoolName;
+  els.topSelectedSchool.title = `${state.selectedSchool.schoolName} · ${state.selectedSchool.region}`;
+  els.topChangeSchoolBtn?.classList.remove("is-hidden");
+}
+
+function scrollToSearch() {
+  document.querySelector("#searchSection")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  setTimeout(() => els.schoolKeyword?.focus(), 350);
+}
+
+
 function normalizeNeisSchoolData(rawData) {
   // TODO: NEIS 학교기본정보 응답을 아래 내부 구조로 변환 예정
   // { schoolName, region, officeCode, schoolCode, schoolType, address }
@@ -192,8 +262,8 @@ function normalizeNeisScheduleData(rawData) {
 }
 
 // 예전 함수명을 쓰는 코드와 호환되도록 별칭 유지
-async function searchSchoolsFromNeis(keyword) {
-  return searchSchools(keyword);
+async function searchSchoolsFromNeis(keyword, officeCode = state.selectedOfficeCode) {
+  return searchSchools(keyword, officeCode);
 }
 
 async function fetchSchedulesFromNeis(officeCode, schoolCode, year, month) {
@@ -271,21 +341,43 @@ function renderSchoolResults(schools) {
     return;
   }
 
+  const selectedRegionName = getOfficeName(state.selectedOfficeCode);
+  const resultTitle = state.selectedOfficeCode
+    ? `${selectedRegionName} 검색 결과 ${schools.length}개`
+    : `검색 결과 ${schools.length}개`;
+  const resultGuide = !state.selectedOfficeCode && schools.length >= 8
+    ? `<p class="result-guide">검색 결과가 많아요. 지역을 선택하면 더 정확하게 찾을 수 있어요.</p>`
+    : "";
+
   if (!schools.length) {
-    els.schoolResults.innerHTML = `<div class="empty-state">검색된 학교가 없어요.<br />학교명을 조금 더 짧게 입력해 보세요.</div>`;
+    els.schoolResults.innerHTML = `
+      <div class="result-summary">
+        <strong>${escapeHtml(resultTitle)}</strong>
+      </div>
+      <div class="empty-state">검색된 학교가 없어요.<br />지역을 바꾸거나 학교명을 조금 더 짧게 입력해 보세요.</div>`;
     return;
   }
 
-  els.schoolResults.innerHTML = schools.map((school, index) => `
-    <article class="school-card">
-      <div>
-        <h3>${escapeHtml(school.schoolName)}</h3>
-        <p>${escapeHtml(school.region)} · ${escapeHtml(school.schoolType)}</p>
-        <p>${escapeHtml(school.address)}</p>
-      </div>
-      <button type="button" data-school-index="${index}">선택</button>
-    </article>
-  `).join("");
+  els.schoolResults.innerHTML = `
+    <div class="result-summary">
+      <strong>${escapeHtml(resultTitle)}</strong>
+      ${resultGuide}
+    </div>
+    ${schools.map((school, index) => `
+      <article class="school-card">
+        <div>
+          <div class="school-card-top">
+            <h3>${escapeHtml(school.schoolName)}</h3>
+            <span class="region-badge">${escapeHtml(getOfficeShortName(school.officeCode || school.region))}</span>
+            <span class="school-type-badge">${escapeHtml(school.schoolType || "학교")}</span>
+          </div>
+          <p>${escapeHtml(school.region)} · ${escapeHtml(school.schoolType)}</p>
+          <p>${escapeHtml(school.address)}</p>
+        </div>
+        <button type="button" data-school-index="${index}">이 학교 선택</button>
+      </article>
+    `).join("")}
+  `;
 
   els.schoolResults.querySelectorAll("[data-school-index]").forEach((button) => {
     button.addEventListener("click", () => {
@@ -296,9 +388,11 @@ function renderSchoolResults(schools) {
 }
 
 function renderSelectedSchool() {
+  renderTopSelectedSchool();
+
   if (!state.selectedSchool) {
     els.selectedSchoolName.textContent = "학교를 선택하면 학사일정이 표시돼요.";
-    els.selectedSchoolMeta.textContent = "학교 검색 후 선택 버튼을 눌러주세요.";
+    els.selectedSchoolMeta.textContent = "지역과 학교명을 입력한 뒤, 이 학교 선택 버튼을 눌러주세요.";
     return;
   }
 
@@ -442,6 +536,7 @@ async function selectSchool(school) {
   saveSelectedSchool(school);
   els.schoolResults.innerHTML = "";
   state.searchKeyword = "";
+  if (els.schoolKeyword) els.schoolKeyword.value = "";
   await loadSchedulesForCurrentMonth();
   renderAll();
   document.querySelector("#scheduleSection")?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -454,6 +549,8 @@ async function resetSchool() {
   els.scheduleKeyword.value = "";
   clearSelectedSchoolStorage();
   els.schoolResults.innerHTML = "";
+  renderTopSelectedSchool();
+  scrollToSearch();
   renderAll();
 }
 
@@ -490,19 +587,36 @@ async function goToday() {
 function bindEvents() {
   els.schoolSearchForm.addEventListener("submit", async (event) => {
     event.preventDefault();
-    const schools = await searchSchools(els.schoolKeyword.value);
+    const schools = await searchSchools(els.schoolKeyword.value, els.schoolRegion?.value || "");
     renderSchoolResults(schools);
+  });
+
+  els.schoolRegion?.addEventListener("change", async () => {
+    state.selectedOfficeCode = els.schoolRegion.value;
+    if (els.schoolKeyword.value.trim()) {
+      const schools = await searchSchools(els.schoolKeyword.value, state.selectedOfficeCode);
+      renderSchoolResults(schools);
+    }
   });
 
   els.quickSchoolButtons.forEach((button) => {
     button.addEventListener("click", async () => {
-      els.schoolKeyword.value = button.dataset.schoolKeyword;
-      const schools = await searchSchools(button.dataset.schoolKeyword);
+      if (button.dataset.officeCode !== undefined) {
+        state.selectedOfficeCode = button.dataset.officeCode;
+        if (els.schoolRegion) els.schoolRegion.value = state.selectedOfficeCode;
+      }
+
+      if (button.dataset.schoolKeyword) {
+        els.schoolKeyword.value = button.dataset.schoolKeyword;
+      }
+
+      const schools = await searchSchools(els.schoolKeyword.value || button.textContent, state.selectedOfficeCode);
       renderSchoolResults(schools);
     });
   });
 
   els.resetSchoolBtn.addEventListener("click", resetSchool);
+  els.topChangeSchoolBtn?.addEventListener("click", resetSchool);
   els.prevMonthBtn.addEventListener("click", () => changeMonth(-1));
   els.nextMonthBtn.addEventListener("click", () => changeMonth(1));
   els.todayBtn.addEventListener("click", goToday);
@@ -524,6 +638,7 @@ function bindEvents() {
 }
 
 async function init() {
+  renderOfficeOptions();
   bindEvents();
   const savedSchool = loadSelectedSchool();
   if (savedSchool) {
