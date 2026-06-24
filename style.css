@@ -1610,3 +1610,125 @@ main {
     flex: 1 1 120px;
   }
 }
+
+/* 3-3 update: share links, lighter share area, card alignment polish */
+.selected-school-card {
+  align-items: flex-start;
+}
+
+.selected-school-text {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.selected-school-actions {
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(91, 95, 239, 0.12);
+}
+
+.share-action-label {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 2px;
+  color: var(--primary-dark);
+  font-size: 12px;
+  font-weight: 950;
+  white-space: nowrap;
+}
+
+.copy-share-button {
+  min-height: 34px;
+  padding: 8px 12px;
+  border: 1px solid rgba(91, 95, 239, 0.18);
+  background: var(--primary-soft);
+  color: var(--primary-dark);
+  box-shadow: none;
+}
+
+.copy-share-button:not(.secondary) {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+  box-shadow: 0 8px 18px rgba(91, 95, 239, 0.12);
+}
+
+.copy-share-button.secondary {
+  background: #fff;
+  color: var(--primary-dark);
+  box-shadow: none;
+}
+
+.copy-share-button:disabled {
+  background: #F8FAFC;
+  color: #9CA3AF;
+  border-color: rgba(209, 213, 219, 0.9);
+  opacity: 1;
+}
+
+.school-card {
+  align-items: stretch;
+  gap: 14px;
+  padding: 16px;
+}
+
+.school-card-main {
+  display: grid;
+  align-content: center;
+  gap: 7px;
+}
+
+.school-card-title-line,
+.school-card-meta-line {
+  margin: 0;
+}
+
+.school-card button {
+  align-self: center;
+  min-height: 42px;
+}
+
+.toast-message {
+  bottom: 84px;
+}
+
+@media (max-width: 640px) {
+  .selected-school-card {
+    gap: 12px;
+    padding: 16px;
+  }
+
+  .selected-school-actions {
+    width: 100%;
+    align-items: stretch;
+  }
+
+  .share-action-label {
+    flex: 0 0 100%;
+    min-height: auto;
+    margin-bottom: 1px;
+  }
+
+  .copy-share-button,
+  .selected-date-actions button {
+    width: auto;
+    flex: 1 1 150px;
+  }
+
+  .school-card {
+    grid-template-columns: 1fr;
+    padding: 15px;
+  }
+
+  .school-card-title-line,
+  .school-card-meta-line {
+    gap: 6px;
+  }
+
+  .school-card button {
+    width: 100%;
+  }
+}

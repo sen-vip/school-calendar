@@ -353,23 +353,46 @@ async function retryLastAction() {
 }
 
 function getCurrentPageUrl() {
-  return window.location.href.split("#")[0];
+  return window.location.href.split("#")[0].split("?")[0];
+}
+
+function getShareParams({ includeMonth = true, includeDate = false, includeGrade = true } = {}) {
+  const params = new URLSearchParams();
+  const school = state.selectedSchool;
+
+  if (school) {
+    params.set("officeCode", school.officeCode || "");
+    params.set("schoolCode", school.schoolCode || "");
+    params.set("schoolName", school.schoolName || "");
+    params.set("region", school.region || "");
+    params.set("schoolType", school.schoolType || "");
+    if (school.address) params.set("address", school.address);
+  }
+
+  if (includeMonth) {
+    params.set("year", String(state.currentDate.getFullYear()));
+    params.set("month", String(state.currentDate.getMonth() + 1));
+  }
+
+  if (includeDate && state.selectedDateKey) {
+    params.set("date", state.selectedDateKey);
+  }
+
+  if (includeGrade && state.selectedGrade && state.selectedGrade !== "all") {
+    params.set("grade", state.selectedGrade);
+  }
+
+  return params;
+}
+
+function buildShareUrl(options = {}) {
+  const url = new URL(getCurrentPageUrl());
+  url.search = getShareParams(options).toString();
+  return url.toString();
 }
 
 function buildSelectedSchoolUrl() {
-  const school = state.selectedSchool;
-  const url = new URL(getCurrentPageUrl());
-  if (!school) return url.toString();
-
-  url.searchParams.set("officeCode", school.officeCode || "");
-  url.searchParams.set("schoolCode", school.schoolCode || "");
-  url.searchParams.set("schoolName", school.schoolName || "");
-  url.searchParams.set("region", school.region || "");
-  url.searchParams.set("schoolType", school.schoolType || "");
-  url.searchParams.set("address", school.address || "");
-  url.searchParams.set("year", String(state.currentDate.getFullYear()));
-  url.searchParams.set("month", String(state.currentDate.getMonth() + 1));
-  return url.toString();
+  return buildShareUrl({ includeMonth: true, includeDate: Boolean(state.selectedDateKey), includeGrade: true });
 }
 
 function getSchoolFromUrlParams() {
@@ -391,10 +414,27 @@ function getSchoolFromUrlParams() {
 
 function applyDateFromUrlParams() {
   const params = new URLSearchParams(window.location.search);
+  const dateParam = params.get("date");
   const year = Number(params.get("year"));
   const month = Number(params.get("month"));
+
+  if (isValidDateKey(dateParam)) {
+    const linkedDate = parseDateKey(dateParam);
+    state.currentDate = new Date(linkedDate.getFullYear(), linkedDate.getMonth(), 1);
+    state.selectedDateKey = dateParam;
+    return;
+  }
+
   if (!year || !month || month < 1 || month > 12) return;
   state.currentDate = new Date(year, month - 1, 1);
+}
+
+function applyFiltersFromUrlParams() {
+  const params = new URLSearchParams(window.location.search);
+  const grade = params.get("grade");
+  if (grade && /^([1-6])$/.test(grade)) {
+    state.selectedGrade = grade;
+  }
 }
 
 function getCurrentShareFiltersLabel() {
@@ -413,54 +453,25 @@ function formatScheduleShareLine(schedule) {
 function makeMonthShareText() {
   const school = state.selectedSchool;
   if (!school) return "";
-
-  const monthTitle = formatMonthTitle(state.currentDate);
-  const schedules = getMonthSchedules()
-    .filter((schedule) => (state.activeFilter === "all" || schedule.type === state.activeFilter))
-    .filter((schedule) => isScheduleVisibleByGrade(schedule, state.selectedGrade))
-    .sort((a, b) => a.date.localeCompare(b.date));
-  const scheduleLines = schedules.map(formatScheduleShareLine).join("\n");
-
-  return [
-    `🏫 ${school.schoolName} ${monthTitle} 학사일정${getCurrentShareFiltersLabel()}`,
-    scheduleLines || "- 등록된 학사일정이 없습니다.",
-    "",
-    "※ 세부 내용은 학교 안내를 확인해 주세요.",
-    `자세히 보기: ${buildSelectedSchoolUrl()}`
-  ].join("\n");
+  return buildShareUrl({ includeMonth: true, includeDate: false, includeGrade: true });
 }
 
 function makeSelectedDateShareText() {
   const school = state.selectedSchool;
   if (!school || !state.selectedDateKey) return "";
-
-  const date = parseDateKey(state.selectedDateKey);
-  const dateLabel = `${date.getMonth() + 1}.${date.getDate()}(${weekdays[date.getDay()]})`;
-  const schedules = getSelectedSchoolSchedules()
-    .filter((schedule) => schedule.date === state.selectedDateKey)
-    .filter((schedule) => (state.activeFilter === "all" || schedule.type === state.activeFilter))
-    .filter((schedule) => isScheduleVisibleByGrade(schedule, state.selectedGrade))
-    .sort((a, b) => a.title.localeCompare(b.title));
-  const scheduleLines = schedules.map(formatScheduleShareLine).join("\n");
-
-  return [
-    `🏫 ${school.schoolName} ${dateLabel} 학사일정${getCurrentShareFiltersLabel()}`,
-    scheduleLines || "- 선택한 날짜에 표시할 일정이 없습니다.",
-    "",
-    "※ 세부 내용은 학교 안내를 확인해 주세요.",
-    `자세히 보기: ${buildSelectedSchoolUrl()}`
-  ].join("\n");
+  return buildShareUrl({ includeMonth: true, includeDate: true, includeGrade: true });
 }
 
 function makeSchoolLinkText() {
   const school = state.selectedSchool;
   if (!school) return "";
+  return buildShareUrl({ includeMonth: true, includeDate: false, includeGrade: false });
+}
 
-  return [
-    `🏫 ${school.schoolName} 학사일정`,
-    `${school.region} · ${school.schoolType || "학교"}`,
-    buildSelectedSchoolUrl()
-  ].join("\n");
+function updateBrowserShareUrl() {
+  if (!state.selectedSchool || !window.history?.replaceState) return;
+  const url = buildShareUrl({ includeMonth: true, includeDate: Boolean(state.selectedDateKey), includeGrade: true });
+  window.history.replaceState(null, "", url);
 }
 
 async function copyTextToClipboard(text, successMessage) {
@@ -477,7 +488,7 @@ async function copyTextToClipboard(text, successMessage) {
 
 function copyMonthShareText() {
   if (!state.selectedSchool) return;
-  copyTextToClipboard(makeMonthShareText(), "이번 달 일정을 복사했어요.");
+  copyTextToClipboard(makeMonthShareText(), "이번 달 링크를 복사했어요.");
 }
 
 function copySelectedDateShareText() {
@@ -485,12 +496,12 @@ function copySelectedDateShareText() {
     showToast("달력에서 날짜를 먼저 선택해 주세요.");
     return;
   }
-  copyTextToClipboard(makeSelectedDateShareText(), "선택한 날짜 일정을 복사했어요.");
+  copyTextToClipboard(makeSelectedDateShareText(), "선택한 날짜 링크를 복사했어요.");
 }
 
 function copySchoolLinkText() {
   if (!state.selectedSchool) return;
-  copyTextToClipboard(makeSchoolLinkText(), "선택 학교 링크를 복사했어요.");
+  copyTextToClipboard(makeSchoolLinkText(), "학교 링크를 복사했어요.");
 }
 
 function showToast(message) {
@@ -627,7 +638,7 @@ function renderSelectedSchool() {
   [els.copyMonthShareBtn, els.copySelectedDateBtn, els.copySchoolLinkBtn].forEach((button) => button?.classList.remove("is-hidden"));
   if (els.copySelectedDateBtn) {
     els.copySelectedDateBtn.disabled = !state.selectedDateKey;
-    els.copySelectedDateBtn.textContent = state.selectedDateKey ? "선택 날짜 복사" : "날짜 선택 후 복사";
+    els.copySelectedDateBtn.textContent = state.selectedDateKey ? "선택 날짜 링크 복사" : "날짜 선택 후 복사";
   }
 }
 
@@ -754,7 +765,7 @@ function renderSelectedDatePanel() {
       <span>선택한 날짜 일정 ${daySchedules.length}개</span>
     </div>
     <div class="selected-date-actions">
-      <button type="button" id="copySelectedDateInlineBtn">선택 날짜 복사</button>
+      <button type="button" id="copySelectedDateInlineBtn">선택 날짜 링크 복사</button>
       <button type="button" id="clearSelectedDateBtn">전체 일정 보기</button>
     </div>
   `;
@@ -766,6 +777,7 @@ function renderSelectedDatePanel() {
     renderSelectedSchool();
     renderCalendar();
     renderScheduleList();
+    updateBrowserShareUrl();
   });
 }
 
@@ -854,6 +866,7 @@ async function selectSchool(school) {
   if (els.schoolKeyword) els.schoolKeyword.value = "";
   await loadSchedulesForCurrentMonth();
   renderAll();
+  updateBrowserShareUrl();
   document.querySelector("#scheduleSection")?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
@@ -867,6 +880,7 @@ async function resetSchool() {
   clearSelectedSchoolStorage();
   els.schoolResults.innerHTML = "";
   renderTopSelectedSchool();
+  if (window.history?.replaceState) window.history.replaceState(null, "", getCurrentPageUrl());
   scrollToSearch();
   renderAll();
 }
@@ -893,6 +907,7 @@ async function changeMonth(offset) {
   state.currentDate = new Date(state.currentDate.getFullYear(), state.currentDate.getMonth() + offset, 1);
   await loadSchedulesForCurrentMonth();
   renderAll();
+  updateBrowserShareUrl();
 }
 
 async function goToday() {
@@ -901,6 +916,7 @@ async function goToday() {
   state.currentDate = new Date(today.getFullYear(), today.getMonth(), 1);
   await loadSchedulesForCurrentMonth();
   renderAll();
+  updateBrowserShareUrl();
 }
 
 function handleCalendarDateClick(event) {
@@ -923,6 +939,7 @@ function handleCalendarDateClick(event) {
   renderSelectedSchool();
   renderCalendar();
   renderScheduleList();
+  updateBrowserShareUrl();
 
   document.querySelector("#scheduleListTitle")?.scrollIntoView({
     behavior: "smooth",
@@ -999,6 +1016,7 @@ function bindEvents() {
     state.selectedGrade = button.dataset.grade;
     state.selectedDateKey = "";
     renderAll();
+    updateBrowserShareUrl();
   });
 
   els.scheduleKeyword.addEventListener("input", () => {
@@ -1007,6 +1025,7 @@ function bindEvents() {
     renderSelectedSchool();
     renderCalendar();
     renderScheduleList();
+    updateBrowserShareUrl();
   });
 }
 
@@ -1014,6 +1033,7 @@ async function init() {
   renderOfficeOptions();
   bindEvents();
   applyDateFromUrlParams();
+  applyFiltersFromUrlParams();
   const linkedSchool = getSchoolFromUrlParams();
   const savedSchool = loadSelectedSchool();
   if (linkedSchool) {
@@ -1201,6 +1221,13 @@ function toDateKey(date) {
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
+}
+
+function isValidDateKey(dateKey) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(dateKey || ""))) return false;
+  const [year, month, day] = dateKey.split("-").map(Number);
+  const parsed = new Date(year, month - 1, day);
+  return parsed.getFullYear() === year && parsed.getMonth() === month - 1 && parsed.getDate() === day;
 }
 
 function parseDateKey(dateKey) {
