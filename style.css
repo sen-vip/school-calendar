@@ -1732,3 +1732,120 @@ main {
     width: 100%;
   }
 }
+
+
+/* 3-4 update: 토요휴업·공휴일 색상 분리 */
+:root {
+  --exam-bg: #FEE2E2;
+  --exam-text: #B91C1C;
+  --exam-line: #FECACA;
+  --vacation-bg: #EEE7FF;
+  --vacation-text: #5B21B6;
+  --vacation-line: #E2D6FF;
+  --event-bg: #EAF6FF;
+  --event-text: #0369A1;
+  --event-line: #D8EEFF;
+  --saturday-bg: #F1F3F5;
+  --saturday-text: #4B5563;
+  --saturday-line: #E5E7EB;
+  --holiday-bg: #FFF7E6;
+  --holiday-text: #B45309;
+  --holiday-line: #FDE68A;
+  --substitute-bg: #FFFBEB;
+  --substitute-text: #92400E;
+  --substitute-line: #FDE68A;
+}
+
+.summary-badges {
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.summary-badge,
+.type-badge,
+.calendar-schedule {
+  border: 1px solid transparent;
+}
+
+.summary-badge.exam,
+.type-badge.exam,
+.calendar-schedule.exam {
+  background: var(--exam-bg);
+  color: var(--exam-text);
+  border-color: var(--exam-line);
+}
+
+.summary-badge.vacation,
+.type-badge.vacation,
+.calendar-schedule.vacation {
+  background: var(--vacation-bg);
+  color: var(--vacation-text);
+  border-color: var(--vacation-line);
+}
+
+.summary-badge.event,
+.type-badge.event,
+.calendar-schedule.event {
+  background: var(--event-bg);
+  color: var(--event-text);
+  border-color: var(--event-line);
+}
+
+.summary-badge.saturday,
+.type-badge.saturday,
+.calendar-schedule.saturday {
+  background: var(--saturday-bg);
+  color: var(--saturday-text);
+  border-color: var(--saturday-line);
+}
+
+.summary-badge.holiday,
+.type-badge.holiday,
+.calendar-schedule.holiday {
+  background: var(--holiday-bg);
+  color: var(--holiday-text);
+  border-color: var(--holiday-line);
+}
+
+.summary-badge.substitute,
+.type-badge.substitute,
+.calendar-schedule.substitute {
+  background: var(--substitute-bg);
+  color: var(--substitute-text);
+  border-color: var(--substitute-line);
+}
+
+.day-cell.has-schedule.schedule-saturday:not(.selected-date) {
+  border-color: var(--saturday-line);
+}
+
+.day-cell.has-schedule.schedule-holiday:not(.selected-date),
+.day-cell.has-schedule.schedule-substitute:not(.selected-date) {
+  border-color: rgba(245, 158, 11, 0.36);
+}
+
+.day-cell.has-schedule.schedule-exam:not(.selected-date) {
+  border-color: rgba(185, 28, 28, 0.28);
+}
+
+.day-cell.has-schedule.schedule-vacation:not(.selected-date) {
+  border-color: rgba(91, 95, 239, 0.24);
+}
+
+.day-cell.has-schedule.schedule-saturday:hover {
+  border-color: #D1D5DB;
+  box-shadow: 0 8px 20px rgba(75, 85, 99, 0.08);
+}
+
+.day-cell.has-schedule.schedule-holiday:hover,
+.day-cell.has-schedule.schedule-substitute:hover {
+  border-color: #F59E0B;
+  box-shadow: 0 8px 20px rgba(245, 158, 11, 0.1);
+}
+
+@media (max-width: 640px) {
+  .summary-badges {
+    justify-content: flex-start;
+  }
+}

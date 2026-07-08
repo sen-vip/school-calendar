@@ -109,8 +109,11 @@ const els = {
 
 const typeLabels = {
   exam: "시험·평가",
-  vacation: "방학·휴업",
+  vacation: "방학·개학",
   event: "행사·체험",
+  saturday: "토요휴업",
+  holiday: "공휴일",
+  substitute: "대체공휴일",
   normal: "기타"
 };
 
@@ -278,7 +281,7 @@ function normalizeNeisScheduleData(rawData) {
     content,
     grades,
     isAllGrades: isAllGradeSchedule({ ...scheduleWithText, grades }),
-    type: normalized.type || classifyScheduleType(title, content)
+    type: normalizeScheduleType(normalized.type, title, content)
   };
 }
 
@@ -670,12 +673,15 @@ function renderSummary() {
   const counts = monthSchedules.reduce((acc, schedule) => {
     acc[schedule.type] = (acc[schedule.type] || 0) + 1;
     return acc;
-  }, { exam: 0, vacation: 0, event: 0, normal: 0 });
+  }, { exam: 0, vacation: 0, event: 0, saturday: 0, holiday: 0, substitute: 0, normal: 0 });
 
   els.summaryBadges.innerHTML = `
-    <span class="summary-badge vacation">방학·휴업 ${counts.vacation || 0}</span>
+    <span class="summary-badge vacation">방학·개학 ${counts.vacation || 0}</span>
     <span class="summary-badge exam">시험·평가 ${counts.exam || 0}</span>
     <span class="summary-badge event">행사·체험 ${counts.event || 0}</span>
+    <span class="summary-badge saturday">토요휴업 ${counts.saturday || 0}</span>
+    <span class="summary-badge holiday">공휴일 ${counts.holiday || 0}</span>
+    <span class="summary-badge substitute">대체공휴일 ${counts.substitute || 0}</span>
   `;
 }
 
@@ -720,7 +726,10 @@ function renderCalendar() {
     if (cellDate.getMonth() !== month) classes.push("other-month");
     if (key === todayKey) classes.push("today");
     if (state.selectedDateKey === key) classes.push("selected-date");
-    if (schedules.length) classes.push("has-schedule");
+    if (schedules.length) {
+      classes.push("has-schedule");
+      classes.push(`schedule-${getPrimaryScheduleType(schedules)}`);
+    }
 
     cells.push(`
       <div
@@ -1269,12 +1278,27 @@ function getFilteredSchedules() {
   }).sort((a, b) => a.date.localeCompare(b.date));
 }
 
+function getPrimaryScheduleType(schedules = []) {
+  const priority = ["exam", "holiday", "substitute", "vacation", "event", "saturday", "normal"];
+  return priority.find((type) => schedules.some((schedule) => schedule.type === type)) || schedules[0]?.type || "normal";
+}
+
+function normalizeScheduleType(rawType = "", title = "", content = "") {
+  const type = String(rawType || "").trim();
+  const allowedTypes = ["exam", "vacation", "event", "saturday", "holiday", "substitute", "normal"];
+  if (allowedTypes.includes(type)) return type;
+  return classifyScheduleType(title, content);
+}
+
 function classifyScheduleType(title = "", content = "") {
   const text = `${title} ${content}`;
 
+  if (/대체\s*공휴일|대체\s*휴일/.test(text)) return "substitute";
+  if (/토요\s*휴업|토요휴업|토요일\s*휴업/.test(text)) return "saturday";
+  if (/공휴일|국경일|임시\s*공휴일|삼일절|3\.?1절|3·1절|어린이날|부처님오신날|석가탄신일|현충일|광복절|개천절|한글날|성탄절|크리스마스|신정|설날|추석|선거일|대통령선거|근로자의날/.test(text)) return "holiday";
   if (/시험|평가|고사|성취도/.test(text)) return "exam";
-  if (/방학|개학|휴업|재량휴업|휴교|개교기념/.test(text)) return "vacation";
-  if (/체험|수련|수학여행|공개수업|행사|축제|운동회|입학식|졸업식|자치회|스포츠/.test(text)) return "event";
+  if (/방학|개학|재량\s*휴업|휴교|개교기념|휴업일/.test(text)) return "vacation";
+  if (/체험|수련|수학여행|공개수업|행사|축제|운동회|입학식|졸업식|자치회|스포츠|동아리/.test(text)) return "event";
 
   return "normal";
 }
