@@ -2345,7 +2345,7 @@ body.no-school #resetSchoolBtn {
   display: none;
 }
 
-/* 3.5.1 update: 보라 중심 컬러 재정렬 + 학교검색 패널 normal-flow 안정화 */
+/* 3.5.2 update: 의식성 학사일정 블루 톤 강화 */
 :root {
   --vacation-bg: #EEE7FF;
   --vacation-text: #5B21B6;
@@ -2356,9 +2356,9 @@ body.no-school #resetSchoolBtn {
   --normal-bg: #EEE7FF;
   --normal-text: #5B21B6;
   --normal-line: #DCCBFF;
-  --ceremony-bg: #EAF6FF;
-  --ceremony-text: #0369A1;
-  --ceremony-line: #BAE6FD;
+  --ceremony-bg: #DBF0FF;
+  --ceremony-text: #075985;
+  --ceremony-line: #7DD3FC;
 }
 
 .summary-badge.event,
