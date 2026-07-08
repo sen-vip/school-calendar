@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>우리학교 학사일정 캘린더</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🏫%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="style.css?v=3.5.0" />
+  <link rel="stylesheet" href="style.css?v=3.5.1" />
 </head>
 <body class="no-school">
   <div class="app-shell">
@@ -24,7 +24,7 @@
       <div class="hero-glow hero-glow-1" aria-hidden="true"></div>
       <div class="hero-glow hero-glow-2" aria-hidden="true"></div>
       <div class="hero-topline">
-        <span class="brand-pill">📅 학사달력 · Beta v3.5</span>
+        <span class="brand-pill">📅 학사달력 · Beta v3.5.1</span>
       </div>
       <h1>우리학교 일정</h1>
       <p>학교 일정을 한눈에 확인하세요.<br />학교를 검색하면 월별 학사일정을 볼 수 있어요.</p>
@@ -96,10 +96,11 @@
           <p id="summaryCount">학교를 선택하면 일정 개수를 확인할 수 있어요.</p>
         </div>
         <div class="summary-badges" id="summaryBadges">
-          <span class="summary-badge vacation">방학·개학 0</span>
+          <span class="summary-badge vacation">방학 0</span>
+          <span class="summary-badge ceremony">입학·졸업 0</span>
           <span class="summary-badge exam">시험·평가 0</span>
           <span class="summary-badge discretionary">재량휴업 0</span>
-          <span class="summary-badge event">행사·체험 0</span>
+          <span class="summary-badge event">일반 학사일정 0</span>
           <span class="summary-badge saturday">토요휴업 0</span>
           <span class="summary-badge holiday">공휴일 0</span>
           <span class="summary-badge substitute">대체공휴일 0</span>
@@ -111,10 +112,11 @@
           <span class="filter-group-title">일정 종류</span>
           <div class="filter-row" role="group" aria-label="학사일정 빠른 필터">
             <button type="button" class="filter-chip active" data-filter="all">전체</button>
-            <button type="button" class="filter-chip" data-filter="vacation">방학·개학</button>
+            <button type="button" class="filter-chip" data-filter="vacation">방학</button>
+            <button type="button" class="filter-chip" data-filter="ceremony">입학·졸업</button>
             <button type="button" class="filter-chip" data-filter="exam">시험·평가</button>
             <button type="button" class="filter-chip" data-filter="discretionary">재량휴업</button>
-            <button type="button" class="filter-chip" data-filter="event">행사·체험</button>
+            <button type="button" class="filter-chip" data-filter="event">일반 학사일정</button>
             <button type="button" class="filter-chip" data-filter="saturday">토요휴업</button>
             <button type="button" class="filter-chip" data-filter="holiday">공휴일</button>
             <button type="button" class="filter-chip" data-filter="substitute">대체공휴일</button>
@@ -164,6 +166,6 @@
     <a href="https://github.com/sen-vip/school-calendar#readme" target="_blank" rel="noopener noreferrer">도움말</a>
   </nav>
 
-  <script src="app.js?v=3.5.0"></script>
+  <script src="app.js?v=3.5.1"></script>
 </body>
 </html>

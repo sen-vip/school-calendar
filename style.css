@@ -2344,3 +2344,142 @@ body.has-school .copy-share-button {
 body.no-school #resetSchoolBtn {
   display: none;
 }
+
+/* 3.5.1 update: 보라 중심 컬러 재정렬 + 학교검색 패널 normal-flow 안정화 */
+:root {
+  --vacation-bg: #EEE7FF;
+  --vacation-text: #5B21B6;
+  --vacation-line: #DCCBFF;
+  --event-bg: #EEE7FF;
+  --event-text: #5B21B6;
+  --event-line: #DCCBFF;
+  --normal-bg: #EEE7FF;
+  --normal-text: #5B21B6;
+  --normal-line: #DCCBFF;
+  --ceremony-bg: #EAF6FF;
+  --ceremony-text: #0369A1;
+  --ceremony-line: #BAE6FD;
+}
+
+.summary-badge.event,
+.type-badge.event,
+.calendar-schedule.event,
+.summary-badge.normal,
+.type-badge.normal,
+.calendar-schedule.normal,
+.summary-badge.vacation,
+.type-badge.vacation,
+.calendar-schedule.vacation {
+  background: var(--event-bg);
+  color: var(--event-text);
+  border-color: var(--event-line);
+}
+
+.summary-badge.ceremony,
+.type-badge.ceremony,
+.calendar-schedule.ceremony {
+  background: var(--ceremony-bg);
+  color: var(--ceremony-text);
+  border-color: var(--ceremony-line);
+}
+
+body.has-school .hero-card {
+  display: none;
+}
+
+body.has-school .search-card {
+  display: none;
+}
+
+body.has-school.school-search-open .search-card {
+  display: block;
+  order: 2;
+  padding: 14px 16px;
+  background: #FFFFFF;
+  border: 1px solid var(--surface-line);
+  border-radius: 18px;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+body.has-school .selected-school-card {
+  order: 1;
+  position: static !important;
+  z-index: auto;
+  box-shadow: none;
+  background: #FFFFFF;
+  border-color: var(--surface-line);
+}
+
+body.has-school .calendar-card { order: 3; }
+body.has-school .summary-card { order: 4; }
+body.has-school .quick-card { order: 5; }
+body.has-school .schedule-list-card { order: 6; }
+body.has-school .notice-card { order: 7; }
+
+body.has-school.school-search-open .search-card .card-heading {
+  align-items: center;
+}
+
+body.has-school.school-search-open .search-card .kicker,
+body.has-school.school-search-open .search-card .card-desc,
+body.has-school.school-search-open .search-card .helper-row {
+  display: none;
+}
+
+body.has-school.school-search-open .search-card h2 {
+  font-size: 16px;
+}
+
+body.has-school.school-search-open .school-search-form {
+  margin-top: 12px;
+}
+
+body.has-school.school-search-open .school-results {
+  max-height: 280px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+body.has-school.school-search-open .school-card {
+  background: #FFFFFF;
+  box-shadow: none;
+}
+
+body.has-school.school-search-open .calendar-card {
+  margin-top: 0;
+}
+
+.day-cell.has-schedule.schedule-event:not(.selected-date),
+.day-cell.has-schedule.schedule-normal:not(.selected-date),
+.day-cell.has-schedule.schedule-vacation:not(.selected-date),
+.day-cell.has-schedule.schedule-ceremony:not(.selected-date) {
+  border-color: var(--day-scheduled-line);
+}
+
+.day-cell.has-schedule.schedule-event:hover,
+.day-cell.has-schedule.schedule-normal:hover,
+.day-cell.has-schedule.schedule-vacation:hover,
+.day-cell.has-schedule.schedule-ceremony:hover {
+  border-color: rgba(91, 95, 239, 0.42);
+  box-shadow: 0 10px 22px rgba(91, 95, 239, 0.10);
+}
+
+@media (max-width: 700px) {
+  body.has-school.school-search-open .search-card {
+    padding: 12px;
+    border-radius: 16px;
+  }
+
+  body.has-school.school-search-open .search-card .card-heading {
+    gap: 8px;
+  }
+
+  body.has-school.school-search-open .search-card h2 {
+    font-size: 15px;
+  }
+
+  body.has-school.school-search-open .school-results {
+    max-height: 220px;
+  }
+}

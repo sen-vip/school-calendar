@@ -74,6 +74,7 @@ const state = {
   schedules: [],
   isSchoolLoading: false,
   isScheduleLoading: false,
+  searchPanelOpen: false,
   errorMessage: ""
 };
 
@@ -109,9 +110,10 @@ const els = {
 
 const typeLabels = {
   exam: "시험·평가",
-  vacation: "방학·개학",
+  vacation: "방학",
+  ceremony: "입학·졸업",
   discretionary: "재량휴업",
-  event: "행사·체험",
+  event: "일반 학사일정",
   saturday: "토요휴업",
   holiday: "공휴일",
   substitute: "대체공휴일",
@@ -243,8 +245,11 @@ function renderTopSelectedSchool() {
 
   document.body.classList.toggle("has-school", Boolean(state.selectedSchool));
   document.body.classList.toggle("no-school", !state.selectedSchool);
+  document.body.classList.toggle("school-search-open", Boolean(state.searchPanelOpen && state.selectedSchool));
 
   if (!state.selectedSchool) {
+    state.searchPanelOpen = false;
+    document.body.classList.remove("school-search-open");
     els.topSelectedSchool.textContent = "우리학교 학사일정";
     els.topSelectedSchool.title = "우리학교 학사일정";
     els.topChangeSchoolBtn?.classList.add("is-hidden");
@@ -259,6 +264,26 @@ function renderTopSelectedSchool() {
 function scrollToSearch() {
   document.querySelector("#searchSection")?.scrollIntoView({ behavior: "smooth", block: "start" });
   setTimeout(() => els.schoolKeyword?.focus(), 350);
+}
+
+function openSchoolSearchPanel() {
+  if (!state.selectedSchool) {
+    resetSchool();
+    return;
+  }
+
+  state.searchPanelOpen = true;
+  renderTopSelectedSchool();
+  if (els.schoolRegion && state.selectedSchool.officeCode) {
+    els.schoolRegion.value = state.selectedSchool.officeCode;
+    state.selectedOfficeCode = state.selectedSchool.officeCode;
+  }
+  scrollToSearch();
+}
+
+function closeSchoolSearchPanel() {
+  state.searchPanelOpen = false;
+  renderTopSelectedSchool();
 }
 
 
@@ -678,13 +703,14 @@ function renderSummary() {
     const displayType = getScheduleType(schedule);
     acc[displayType] = (acc[displayType] || 0) + 1;
     return acc;
-  }, { exam: 0, vacation: 0, discretionary: 0, event: 0, saturday: 0, holiday: 0, substitute: 0, normal: 0 });
+  }, { exam: 0, vacation: 0, ceremony: 0, discretionary: 0, event: 0, saturday: 0, holiday: 0, substitute: 0, normal: 0 });
 
   els.summaryBadges.innerHTML = `
-    <span class="summary-badge vacation">방학·개학 ${counts.vacation || 0}</span>
+    <span class="summary-badge vacation">방학 ${counts.vacation || 0}</span>
+    <span class="summary-badge ceremony">입학·졸업 ${counts.ceremony || 0}</span>
     <span class="summary-badge exam">시험·평가 ${counts.exam || 0}</span>
     <span class="summary-badge discretionary">재량휴업 ${counts.discretionary || 0}</span>
-    <span class="summary-badge event">행사·체험 ${counts.event || 0}</span>
+    <span class="summary-badge event">일반 학사일정 ${counts.event || 0}</span>
     <span class="summary-badge saturday">토요휴업 ${counts.saturday || 0}</span>
     <span class="summary-badge holiday">공휴일 ${counts.holiday || 0}</span>
     <span class="summary-badge substitute">대체공휴일 ${counts.substitute || 0}</span>
@@ -879,6 +905,7 @@ async function selectSchool(school) {
   state.scheduleSearchKeyword = "";
   state.selectedDateKey = "";
   state.selectedGrade = "all";
+  state.searchPanelOpen = false;
   els.scheduleKeyword.value = "";
   saveSelectedSchool(school);
   els.schoolResults.innerHTML = "";
@@ -896,6 +923,7 @@ async function resetSchool() {
   state.scheduleSearchKeyword = "";
   state.selectedDateKey = "";
   state.selectedGrade = "all";
+  state.searchPanelOpen = false;
   els.scheduleKeyword.value = "";
   clearSelectedSchoolStorage();
   els.schoolResults.innerHTML = "";
@@ -1007,7 +1035,7 @@ function bindEvents() {
   });
 
   els.resetSchoolBtn.addEventListener("click", resetSchool);
-  els.topChangeSchoolBtn?.addEventListener("click", resetSchool);
+  els.topChangeSchoolBtn?.addEventListener("click", openSchoolSearchPanel);
   els.copyMonthShareBtn?.addEventListener("click", copyMonthShareText);
   els.copySelectedDateBtn?.addEventListener("click", copySelectedDateShareText);
   els.copySchoolLinkBtn?.addEventListener("click", copySchoolLinkText);
@@ -1290,7 +1318,7 @@ function getFilteredSchedules() {
 }
 
 function getPrimaryScheduleType(schedules = []) {
-  const priority = ["exam", "holiday", "substitute", "discretionary", "vacation", "event", "saturday", "normal"];
+  const priority = ["exam", "holiday", "substitute", "discretionary", "ceremony", "vacation", "event", "saturday", "normal"];
   return priority.find((type) => schedules.some((schedule) => getScheduleType(schedule) === type)) || getScheduleType(schedules[0]) || "normal";
 }
 
@@ -1300,7 +1328,7 @@ function getScheduleType(schedule = {}) {
 
 function normalizeScheduleType(rawType = "", title = "", content = "") {
   const type = String(rawType || "").trim();
-  const allowedTypes = ["exam", "vacation", "discretionary", "event", "saturday", "holiday", "substitute", "normal"];
+  const allowedTypes = ["exam", "vacation", "ceremony", "discretionary", "event", "saturday", "holiday", "substitute", "normal"];
 
   // 화면 색상은 최종 표시명 기준으로 다시 판별한다.
   // 프록시가 예전 기준의 type을 내려주더라도 토요휴업일/공휴일/대체공휴일은
@@ -1320,10 +1348,12 @@ function classifyScheduleType(title = "", content = "") {
   if (/공휴일|국경일|임시\s*공휴일|삼일절|3\.?1절|3·1절|어린이날|부처님오신날|석가탄신일|현충일|광복절|개천절|한글날|성탄절|크리스마스|신정|설날|추석|선거일|대통령선거|근로자의날|노동절/.test(text)) return "holiday";
   if (/시험|평가|고사|성취도/.test(text)) return "exam";
   if (/재량\s*휴업|학교장\s*재량|휴교|개교기념/.test(text)) return "discretionary";
-  if (/방학|개학|입학식|졸업식|종업식|수료식/.test(text)) return "vacation";
-  if (/체험|수련|수학여행|공개수업|행사|축제|운동회|자치회|자치|스포츠|동아리|진로|검사|사제동행|걷기|지역사회|연계|활동|교육|상담|봉사|문화|대회|캠프|설명회|안전|건강|학교폭력/.test(text)) return "event";
+  if (/입학식|졸업식|개학식|종업식|수료식|방학식/.test(text)) return "ceremony";
+  if (/방학/.test(text)) return "vacation";
 
-  return "normal";
+  // 달력에 올라온 학교 일정은 기본적으로 보여야 하는 정보이므로
+  // 토요휴업일을 제외하고 회색 기본값으로 묻히지 않게 보라색 행사로 처리한다.
+  return "event";
 }
 
 function wait(ms) {
