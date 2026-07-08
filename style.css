@@ -1907,3 +1907,440 @@ main {
   border-color: #7DD3FC;
   box-shadow: 0 8px 20px rgba(3, 105, 161, 0.08);
 }
+
+/* 3.5 update: 달력 우선 레이아웃 정리 + 칩 중심 컬러 체계 */
+:root {
+  --app-width: 820px;
+  --surface-line: #E7EAF2;
+  --day-line: #E9ECF3;
+  --day-scheduled-line: #DCE2F2;
+  --exam-bg: #FEE2E2;
+  --exam-text: #B91C1C;
+  --exam-line: #FECACA;
+  --vacation-bg: #EEE7FF;
+  --vacation-text: #5B21B6;
+  --vacation-line: #DCCBFF;
+  --discretionary-bg: #FFEDEE;
+  --discretionary-text: #B4232A;
+  --discretionary-line: #FFD1D5;
+  --event-bg: #EAF6FF;
+  --event-text: #0369A1;
+  --event-line: #BAE6FD;
+  --normal-bg: #EAF6FF;
+  --normal-text: #0369A1;
+  --normal-line: #BAE6FD;
+  --saturday-bg: #F1F3F5;
+  --saturday-text: #4B5563;
+  --saturday-line: #E5E7EB;
+  --holiday-bg: #FFF7E6;
+  --holiday-text: #B45309;
+  --holiday-line: #FDE68A;
+  --substitute-bg: #FFFBEB;
+  --substitute-text: #92400E;
+  --substitute-line: #FDE68A;
+}
+
+body.has-school .hero-card,
+body.has-school .search-card {
+  display: none;
+}
+
+body.no-school .selected-school-card,
+body.no-school .calendar-card,
+body.no-school .summary-card,
+body.no-school .quick-card,
+body.no-school .schedule-list-card,
+body.no-school .notice-card {
+  display: none;
+}
+
+.hero-card,
+main {
+  width: min(var(--app-width), calc(100% - 32px));
+}
+
+.hero-card {
+  min-height: auto;
+  padding: 18px 22px;
+  border-radius: 26px;
+  box-shadow: 0 16px 36px rgba(79, 70, 229, 0.18);
+}
+
+.hero-card h1 {
+  margin: 12px 0 6px;
+  font-size: clamp(24px, 4.8vw, 30px);
+}
+
+.hero-card p {
+  margin-bottom: 0;
+  font-size: 13.5px;
+  line-height: 1.55;
+}
+
+main {
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.top-bar {
+  min-height: 52px;
+  margin-bottom: 10px;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: max(16px, calc((100% - var(--app-width)) / 2));
+  padding-right: max(16px, calc((100% - var(--app-width)) / 2));
+  background: rgba(255, 255, 255, 0.94);
+}
+
+.top-brand-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 12px;
+}
+
+.top-brand {
+  max-width: min(52vw, 430px);
+}
+
+#topSelectedSchool {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.help-button,
+.top-change-school {
+  min-height: 32px;
+  height: 32px;
+  padding: 0 12px;
+}
+
+body.has-school main {
+  margin-top: 8px;
+}
+
+body.has-school .selected-school-card {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 0;
+  padding: 12px 14px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid var(--surface-line);
+  box-shadow: 0 10px 24px rgba(17, 24, 39, 0.05);
+}
+
+body.has-school .school-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 15px;
+  font-size: 21px;
+  background: #F5F6FF;
+  box-shadow: inset 0 0 0 1px rgba(91, 95, 239, 0.08);
+}
+
+body.has-school .selected-school-text {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 4px 12px;
+  align-items: center;
+}
+
+body.has-school .selected-school-text .kicker {
+  display: none;
+}
+
+body.has-school .selected-school-text h2 {
+  grid-column: 1;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 17px;
+  line-height: 1.2;
+}
+
+body.has-school .selected-school-text p {
+  grid-column: 1;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12.5px;
+}
+
+body.has-school .selected-school-actions {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  justify-content: flex-end;
+  margin: 0;
+  padding: 0;
+  border-top: 0;
+}
+
+body.has-school .share-action-label {
+  display: none;
+}
+
+body.has-school .copy-share-button {
+  min-height: 30px;
+  padding: 7px 10px;
+  font-size: 11.5px;
+  box-shadow: none;
+}
+
+.calendar-card {
+  padding: 20px;
+  border-radius: 24px;
+}
+
+.calendar-toolbar {
+  grid-template-columns: 42px 1fr auto 42px;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.calendar-toolbar .month-title-wrap {
+  grid-column: 2;
+}
+
+#prevMonthBtn {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+#todayBtn {
+  grid-column: 3;
+  grid-row: 1;
+}
+
+#nextMonthBtn {
+  grid-column: 4;
+  grid-row: 1;
+}
+
+.month-title-wrap .kicker {
+  font-size: 11px;
+}
+
+.month-title-wrap h2 {
+  margin-top: 2px;
+  font-size: clamp(20px, 4vw, 25px);
+}
+
+.month-button,
+.today-button {
+  height: 42px;
+  border-radius: 15px;
+}
+
+.month-button {
+  width: 42px;
+}
+
+.today-button {
+  padding: 0 14px;
+}
+
+.calendar {
+  gap: 7px;
+}
+
+.weekday {
+  padding-bottom: 9px;
+}
+
+.day-cell {
+  min-height: 88px;
+  padding: 8px;
+  border-color: var(--day-line);
+  background: #FBFCFF;
+  transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
+}
+
+.day-cell.has-schedule,
+.day-cell.has-schedule.schedule-saturday:not(.selected-date),
+.day-cell.has-schedule.schedule-holiday:not(.selected-date),
+.day-cell.has-schedule.schedule-substitute:not(.selected-date),
+.day-cell.has-schedule.schedule-exam:not(.selected-date),
+.day-cell.has-schedule.schedule-vacation:not(.selected-date),
+.day-cell.has-schedule.schedule-discretionary:not(.selected-date),
+.day-cell.has-schedule.schedule-event:not(.selected-date),
+.day-cell.has-schedule.schedule-normal:not(.selected-date) {
+  border-color: var(--day-scheduled-line);
+  background: #FFFFFF;
+}
+
+.day-cell.has-schedule:hover,
+.day-cell.has-schedule.schedule-saturday:hover,
+.day-cell.has-schedule.schedule-holiday:hover,
+.day-cell.has-schedule.schedule-substitute:hover,
+.day-cell.has-schedule.schedule-discretionary:hover,
+.day-cell.has-schedule.schedule-event:hover,
+.day-cell.has-schedule.schedule-normal:hover {
+  border-color: rgba(91, 95, 239, 0.42);
+  box-shadow: 0 10px 22px rgba(91, 95, 239, 0.10);
+  background: #FFFFFF;
+}
+
+.day-cell.selected-date {
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 0 3px rgba(91, 95, 239, 0.14), 0 10px 22px rgba(91, 95, 239, 0.08) !important;
+}
+
+.calendar-schedule {
+  border: 1px solid transparent;
+  font-size: 10.8px;
+  font-weight: 900;
+}
+
+.summary-card,
+.quick-card,
+.schedule-list-card,
+.notice-card {
+  border-radius: 22px;
+}
+
+.summary-card {
+  grid-template-columns: 1fr;
+  gap: 10px;
+  padding: 16px;
+}
+
+.summary-badges {
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.quick-card {
+  padding: 16px;
+}
+
+.notice-card {
+  margin-top: 0;
+}
+
+.notice-card p {
+  white-space: normal;
+}
+
+.bottom-nav a[href="#scheduleSection"] {
+  display: none;
+}
+
+@media (min-width: 760px) {
+  body.has-school .selected-school-card {
+    position: sticky;
+    top: 62px;
+    z-index: 20;
+  }
+}
+
+@media (max-width: 700px) {
+  .hero-card,
+  main {
+    width: min(100% - 22px, 560px);
+  }
+
+  .top-brand {
+    max-width: 48vw;
+  }
+
+  body.has-school .selected-school-card {
+    grid-template-columns: 36px minmax(0, 1fr);
+    padding: 11px 12px;
+  }
+
+  body.has-school .school-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 13px;
+    font-size: 19px;
+  }
+
+  body.has-school .selected-school-text {
+    grid-template-columns: 1fr;
+  }
+
+  body.has-school .selected-school-actions {
+    grid-column: 1;
+    grid-row: auto;
+    justify-content: flex-start;
+    margin-top: 5px;
+  }
+
+  body.has-school .copy-share-button.secondary,
+  body.has-school #copySelectedDateBtn {
+    display: none;
+  }
+
+  .calendar-card {
+    padding: 16px 12px 14px;
+  }
+
+  .calendar-toolbar {
+    grid-template-columns: 40px 1fr 40px;
+    gap: 7px;
+  }
+
+  #prevMonthBtn { grid-column: 1; }
+  .calendar-toolbar .month-title-wrap { grid-column: 2; }
+  #nextMonthBtn { grid-column: 3; }
+  #todayBtn {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    height: 36px;
+  }
+
+  .calendar {
+    gap: 5px;
+  }
+
+  .day-cell {
+    min-height: 76px;
+    padding: 6px;
+    border-radius: 14px;
+  }
+
+  .day-number {
+    width: 23px;
+    height: 23px;
+    margin-bottom: 4px;
+  }
+
+  .calendar-schedule {
+    padding: 3px 4px;
+    font-size: 9.5px;
+  }
+
+  .summary-card,
+  .quick-card {
+    padding: 14px;
+  }
+}
+
+@media (max-width: 390px) {
+  .top-actions .help-button {
+    display: none;
+  }
+
+  .top-brand {
+    max-width: 68vw;
+  }
+
+  .day-cell {
+    min-height: 68px;
+  }
+
+  .calendar-schedule {
+    font-size: 9px;
+  }
+}
+
+body.no-school #resetSchoolBtn {
+  display: none;
+}

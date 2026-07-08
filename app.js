@@ -241,6 +241,9 @@ function renderOfficeOptions() {
 function renderTopSelectedSchool() {
   if (!els.topSelectedSchool) return;
 
+  document.body.classList.toggle("has-school", Boolean(state.selectedSchool));
+  document.body.classList.toggle("no-school", !state.selectedSchool);
+
   if (!state.selectedSchool) {
     els.topSelectedSchool.textContent = "우리학교 학사일정";
     els.topSelectedSchool.title = "우리학교 학사일정";
@@ -884,7 +887,7 @@ async function selectSchool(school) {
   await loadSchedulesForCurrentMonth();
   renderAll();
   updateBrowserShareUrl();
-  document.querySelector("#scheduleSection")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  document.querySelector("#calendarSection")?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 async function resetSchool() {
@@ -1011,7 +1014,7 @@ function bindEvents() {
 
   els.topSelectedSchool?.addEventListener("click", (event) => {
     event.preventDefault();
-    document.querySelector("#selectedSchoolCard")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    document.querySelector("#calendarSection")?.scrollIntoView({ behavior: "smooth", block: "start" });
   });
   els.prevMonthBtn.addEventListener("click", () => changeMonth(-1));
   els.nextMonthBtn.addEventListener("click", () => changeMonth(1));

@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>우리학교 학사일정 캘린더</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🏫%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="style.css?v=3.4.3" />
+  <link rel="stylesheet" href="style.css?v=3.5.0" />
 </head>
-<body>
+<body class="no-school">
   <div class="app-shell">
     <div class="top-bar">
       <a class="top-brand" href="#homeSection" aria-label="홈으로 이동">
@@ -15,7 +15,7 @@
         <span id="topSelectedSchool">우리학교 학사일정</span>
       </a>
       <div class="top-actions">
-        <button type="button" class="top-change-school is-hidden" id="topChangeSchoolBtn">학교변경</button>
+        <button type="button" class="top-change-school is-hidden" id="topChangeSchoolBtn">학교 바꾸기</button>
         <a class="help-button" href="https://github.com/sen-vip/school-calendar#readme" target="_blank" rel="noopener noreferrer">도움말</a>
       </div>
     </div>
@@ -24,7 +24,7 @@
       <div class="hero-glow hero-glow-1" aria-hidden="true"></div>
       <div class="hero-glow hero-glow-2" aria-hidden="true"></div>
       <div class="hero-topline">
-        <span class="brand-pill">📅 학사달력 · Beta v3.4.3</span>
+        <span class="brand-pill">📅 학사달력 · Beta v3.5</span>
       </div>
       <h1>우리학교 일정</h1>
       <p>학교 일정을 한눈에 확인하세요.<br />학교를 검색하면 월별 학사일정을 볼 수 있어요.</p>
@@ -75,6 +75,20 @@
         </div>
       </section>
 
+      <section class="card calendar-card" id="calendarSection" aria-labelledby="currentMonthTitle">
+        <div class="calendar-toolbar">
+          <button type="button" class="month-button" id="prevMonthBtn" aria-label="이전 달">‹</button>
+          <div class="month-title-wrap">
+            <span class="kicker">월별 달력</span>
+            <h2 id="currentMonthTitle">2026년 6월</h2>
+          </div>
+          <button type="button" class="month-button" id="nextMonthBtn" aria-label="다음 달">›</button>
+          <button type="button" class="today-button" id="todayBtn">오늘</button>
+        </div>
+
+        <div class="calendar" id="calendar" aria-label="월별 학사일정 달력"></div>
+      </section>
+
       <section class="summary-card" id="scheduleSection" aria-labelledby="summaryTitle">
         <div>
           <span class="kicker">이번 달 요약</span>
@@ -120,26 +134,11 @@
         </div>
       </section>
 
-      <section class="card calendar-card" aria-labelledby="currentMonthTitle">
-        <div class="calendar-toolbar">
-          <button type="button" class="month-button" id="prevMonthBtn" aria-label="이전 달">‹</button>
-          <div class="month-title-wrap">
-            <span class="kicker">월별 달력</span>
-            <h2 id="currentMonthTitle">2026년 6월</h2>
-          </div>
-          <button type="button" class="month-button" id="nextMonthBtn" aria-label="다음 달">›</button>
-          <button type="button" class="today-button" id="todayBtn">오늘</button>
-        </div>
-
-        <div class="calendar" id="calendar" aria-label="월별 학사일정 달력"></div>
-      </section>
+      
 
       
 
-      <section class="notice-card" id="infoSection" aria-label="학사일정 안내">
-        <div class="notice-icon" aria-hidden="true">💡</div>
-        <p>학사일정은 나이스 교육정보 개방 API 연동을 기준으로 제공될 예정입니다. 학교 사정에 따라 일정이 변경될 수 있으므로, 세부 내용은 학교 안내를 함께 확인해 주세요.</p>
-      </section>
+      
     
 <section class="card list-card schedule-list-card" aria-labelledby="scheduleListTitle">
         <div class="card-heading compact">
@@ -150,16 +149,21 @@
         <div id="selectedDatePanel" class="selected-date-panel is-hidden" aria-live="polite"></div>
         <div id="scheduleList" class="schedule-list" aria-live="polite"></div>
       </section>
+
+      <section class="notice-card" id="infoSection" aria-label="학사일정 안내">
+        <div class="notice-icon" aria-hidden="true">💡</div>
+        <p>학사일정은 나이스 교육정보 개방 API 연동을 기준으로 제공될 예정입니다. 학교 사정에 따라 일정이 변경될 수 있으므로, 세부 내용은 학교 안내를 함께 확인해 주세요.</p>
+      </section>
 </main>
   </div>
 
   <nav class="bottom-nav" aria-label="빠른 이동">
     <a href="#homeSection">홈</a>
     <a href="#searchSection">학교찾기</a>
-    <a href="#scheduleSection">달력</a>
+    <a href="#calendarSection">달력</a>
     <a href="https://github.com/sen-vip/school-calendar#readme" target="_blank" rel="noopener noreferrer">도움말</a>
   </nav>
 
-  <script src="app.js?v=3.4.3"></script>
+  <script src="app.js?v=3.5.0"></script>
 </body>
 </html>
