@@ -1849,3 +1849,61 @@ main {
     justify-content: flex-start;
   }
 }
+
+/* 3-4-3 update: 보라 핵심일정 보존 + 일반행사 블루 강화 */
+:root {
+  --exam-bg: #FEE2E2;
+  --exam-text: #B91C1C;
+  --exam-line: #FECACA;
+  --vacation-bg: #EEE7FF;
+  --vacation-text: #5B21B6;
+  --vacation-line: #DCCBFF;
+  --discretionary-bg: #FFEDEE;
+  --discretionary-text: #B4232A;
+  --discretionary-line: #FFD1D5;
+  --event-bg: #EAF6FF;
+  --event-text: #0369A1;
+  --event-line: #BAE6FD;
+  --normal-bg: #EAF6FF;
+  --normal-text: #0369A1;
+  --normal-line: #BAE6FD;
+  --saturday-bg: #F1F3F5;
+  --saturday-text: #4B5563;
+  --saturday-line: #E5E7EB;
+}
+
+.summary-badge.discretionary,
+.type-badge.discretionary,
+.calendar-schedule.discretionary {
+  background: var(--discretionary-bg);
+  color: var(--discretionary-text);
+  border-color: var(--discretionary-line);
+}
+
+.summary-badge.normal,
+.type-badge.normal,
+.calendar-schedule.normal {
+  background: var(--normal-bg);
+  color: var(--normal-text);
+  border-color: var(--normal-line);
+}
+
+.day-cell.has-schedule.schedule-discretionary:not(.selected-date) {
+  border-color: rgba(180, 35, 42, 0.22);
+}
+
+.day-cell.has-schedule.schedule-event:not(.selected-date),
+.day-cell.has-schedule.schedule-normal:not(.selected-date) {
+  border-color: rgba(3, 105, 161, 0.24);
+}
+
+.day-cell.has-schedule.schedule-discretionary:hover {
+  border-color: #FCA5A5;
+  box-shadow: 0 8px 20px rgba(180, 35, 42, 0.08);
+}
+
+.day-cell.has-schedule.schedule-event:hover,
+.day-cell.has-schedule.schedule-normal:hover {
+  border-color: #7DD3FC;
+  box-shadow: 0 8px 20px rgba(3, 105, 161, 0.08);
+}

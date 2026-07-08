@@ -110,6 +110,7 @@ const els = {
 const typeLabels = {
   exam: "시험·평가",
   vacation: "방학·개학",
+  discretionary: "재량휴업",
   event: "행사·체험",
   saturday: "토요휴업",
   holiday: "공휴일",
@@ -674,11 +675,12 @@ function renderSummary() {
     const displayType = getScheduleType(schedule);
     acc[displayType] = (acc[displayType] || 0) + 1;
     return acc;
-  }, { exam: 0, vacation: 0, event: 0, saturday: 0, holiday: 0, substitute: 0, normal: 0 });
+  }, { exam: 0, vacation: 0, discretionary: 0, event: 0, saturday: 0, holiday: 0, substitute: 0, normal: 0 });
 
   els.summaryBadges.innerHTML = `
     <span class="summary-badge vacation">방학·개학 ${counts.vacation || 0}</span>
     <span class="summary-badge exam">시험·평가 ${counts.exam || 0}</span>
+    <span class="summary-badge discretionary">재량휴업 ${counts.discretionary || 0}</span>
     <span class="summary-badge event">행사·체험 ${counts.event || 0}</span>
     <span class="summary-badge saturday">토요휴업 ${counts.saturday || 0}</span>
     <span class="summary-badge holiday">공휴일 ${counts.holiday || 0}</span>
@@ -1285,7 +1287,7 @@ function getFilteredSchedules() {
 }
 
 function getPrimaryScheduleType(schedules = []) {
-  const priority = ["exam", "holiday", "substitute", "vacation", "event", "saturday", "normal"];
+  const priority = ["exam", "holiday", "substitute", "discretionary", "vacation", "event", "saturday", "normal"];
   return priority.find((type) => schedules.some((schedule) => getScheduleType(schedule) === type)) || getScheduleType(schedules[0]) || "normal";
 }
 
@@ -1295,7 +1297,7 @@ function getScheduleType(schedule = {}) {
 
 function normalizeScheduleType(rawType = "", title = "", content = "") {
   const type = String(rawType || "").trim();
-  const allowedTypes = ["exam", "vacation", "event", "saturday", "holiday", "substitute", "normal"];
+  const allowedTypes = ["exam", "vacation", "discretionary", "event", "saturday", "holiday", "substitute", "normal"];
 
   // 화면 색상은 최종 표시명 기준으로 다시 판별한다.
   // 프록시가 예전 기준의 type을 내려주더라도 토요휴업일/공휴일/대체공휴일은
@@ -1312,10 +1314,11 @@ function classifyScheduleType(title = "", content = "") {
 
   if (/대체\s*공휴일|대체\s*휴일/.test(text)) return "substitute";
   if (/토요\s*휴업|토요휴업|토요일\s*휴업/.test(text)) return "saturday";
-  if (/공휴일|국경일|임시\s*공휴일|삼일절|3\.?1절|3·1절|어린이날|부처님오신날|석가탄신일|현충일|광복절|개천절|한글날|성탄절|크리스마스|신정|설날|추석|선거일|대통령선거|근로자의날/.test(text)) return "holiday";
+  if (/공휴일|국경일|임시\s*공휴일|삼일절|3\.?1절|3·1절|어린이날|부처님오신날|석가탄신일|현충일|광복절|개천절|한글날|성탄절|크리스마스|신정|설날|추석|선거일|대통령선거|근로자의날|노동절/.test(text)) return "holiday";
   if (/시험|평가|고사|성취도/.test(text)) return "exam";
-  if (/방학|개학|재량\s*휴업|휴교|개교기념|휴업일/.test(text)) return "vacation";
-  if (/체험|수련|수학여행|공개수업|행사|축제|운동회|입학식|졸업식|자치회|스포츠|동아리/.test(text)) return "event";
+  if (/재량\s*휴업|학교장\s*재량|휴교|개교기념/.test(text)) return "discretionary";
+  if (/방학|개학|입학식|졸업식|종업식|수료식/.test(text)) return "vacation";
+  if (/체험|수련|수학여행|공개수업|행사|축제|운동회|자치회|자치|스포츠|동아리|진로|검사|사제동행|걷기|지역사회|연계|활동|교육|상담|봉사|문화|대회|캠프|설명회|안전|건강|학교폭력/.test(text)) return "event";
 
   return "normal";
 }

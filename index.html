@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>우리학교 학사일정 캘린더</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🏫%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="style.css?v=3.4.2" />
+  <link rel="stylesheet" href="style.css?v=3.4.3" />
 </head>
 <body>
   <div class="app-shell">
@@ -24,7 +24,7 @@
       <div class="hero-glow hero-glow-1" aria-hidden="true"></div>
       <div class="hero-glow hero-glow-2" aria-hidden="true"></div>
       <div class="hero-topline">
-        <span class="brand-pill">📅 학사달력 · Beta v3.4.2</span>
+        <span class="brand-pill">📅 학사달력 · Beta v3.4.3</span>
       </div>
       <h1>우리학교 일정</h1>
       <p>학교 일정을 한눈에 확인하세요.<br />학교를 검색하면 월별 학사일정을 볼 수 있어요.</p>
@@ -84,6 +84,7 @@
         <div class="summary-badges" id="summaryBadges">
           <span class="summary-badge vacation">방학·개학 0</span>
           <span class="summary-badge exam">시험·평가 0</span>
+          <span class="summary-badge discretionary">재량휴업 0</span>
           <span class="summary-badge event">행사·체험 0</span>
           <span class="summary-badge saturday">토요휴업 0</span>
           <span class="summary-badge holiday">공휴일 0</span>
@@ -98,6 +99,7 @@
             <button type="button" class="filter-chip active" data-filter="all">전체</button>
             <button type="button" class="filter-chip" data-filter="vacation">방학·개학</button>
             <button type="button" class="filter-chip" data-filter="exam">시험·평가</button>
+            <button type="button" class="filter-chip" data-filter="discretionary">재량휴업</button>
             <button type="button" class="filter-chip" data-filter="event">행사·체험</button>
             <button type="button" class="filter-chip" data-filter="saturday">토요휴업</button>
             <button type="button" class="filter-chip" data-filter="holiday">공휴일</button>
@@ -158,6 +160,6 @@
     <a href="https://github.com/sen-vip/school-calendar#readme" target="_blank" rel="noopener noreferrer">도움말</a>
   </nav>
 
-  <script src="app.js?v=3.4.2"></script>
+  <script src="app.js?v=3.4.3"></script>
 </body>
 </html>
